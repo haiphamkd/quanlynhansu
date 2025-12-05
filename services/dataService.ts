@@ -1,12 +1,13 @@
 import { Employee, FundTransaction, PrescriptionReport, Attendance, AnnualEvaluation, Proposal, User, Shift, TempData } from '../types';
 import { MOCK_EMPLOYEES, MOCK_FUNDS, MOCK_REPORTS, MOCK_ATTENDANCE, MOCK_EVALUATIONS, MOCK_PROPOSALS } from './mockData';
 
+// LINK CỨNG WEB APP CỦA BẠN
 const HARDCODED_URL = 'https://script.google.com/macros/s/AKfycbxkVcJmyvpGKSD7ZJSbtN4xtPBRxj_fQGzdWZRd-ALgWtFVAcNh_Hpjr6MhVhsixmLP3A/exec';
 
 class DataService {
   private apiUrl: string = HARDCODED_URL;
   private isDemoMode: boolean = false;
-  
+
   private employees: Employee[] = [...MOCK_EMPLOYEES];
   private funds: FundTransaction[] = [...MOCK_FUNDS];
   private reports: PrescriptionReport[] = [...MOCK_REPORTS];
@@ -31,17 +32,26 @@ class DataService {
     localStorage.setItem('pharmahr_api_url', url);
   }
 
-  getApiUrl() { return this.apiUrl; }
-  setDemoMode(enabled: boolean) { this.isDemoMode = enabled; }
-  isDemo() { return this.isDemoMode; }
+  getApiUrl() {
+    return this.apiUrl;
+  }
+
+  setDemoMode(enabled: boolean) {
+    this.isDemoMode = enabled;
+  }
+
+  isDemo() {
+    return this.isDemoMode;
+  }
 
   async testConnection(): Promise<{success: boolean, message: string}> {
     if (!this.apiUrl) return { success: false, message: 'Chưa cấu hình URL' };
     try {
+       // Test connection using simple GET with no-cors to avoid network error throw
        await fetch(`${this.apiUrl}?action=test`, {
           method: 'POST',
           mode: 'no-cors', 
-          body: JSON.stringify({ action: 'test' })
+          body: new URLSearchParams({ action: 'test' })
        });
        return { success: true, message: 'Đã gửi tín hiệu đến Server' };
     } catch (e: any) {
@@ -49,17 +59,23 @@ class DataService {
     }
   }
 
+  // --- CORE API CALLER (FORM DATA VERSION) ---
   private async callApi(action: string, data: any = {}) {
     if (this.isDemoMode) return null;
     
     try {
-      const payload = { action, ...data };
-      
+      // SỬ DỤNG URLSearchParams: Đây là chìa khóa để fix lỗi Login
+      // Nó gửi data dạng application/x-www-form-urlencoded
+      // Google Apps Script xử lý cái này rất mượt và Browser không chặn CORS
+      const formData = new URLSearchParams();
+      formData.append('action', action);
+      // Đóng gói data phức tạp vào 1 field JSON string
+      formData.append('data', JSON.stringify(data));
+
       const response = await fetch(this.apiUrl, {
         method: 'POST',
-        redirect: 'follow',
-        // Gửi chuỗi JSON thuần để tránh lỗi CORS Preflight
-        body: JSON.stringify(payload)
+        body: formData
+        // Không set Header Content-Type thủ công, để browser tự set
       });
 
       const text = await response.text();
@@ -69,8 +85,9 @@ class DataService {
         if (json.error) throw new Error(json.error);
         return json;
       } catch (parseError) {
-        if (text.includes('<!DOCTYPE html>')) throw new Error("Lỗi Script Google (HTML Response)");
-        if (text.includes('action=')) throw new Error("Vui lòng Deploy lại Google Apps Script (New Version)");
+        if (text.includes('<!DOCTYPE html>')) {
+           throw new Error("URL sai hoặc Script lỗi (Trả về HTML)");
+        }
         throw parseError;
       }
     } catch (error) {
@@ -95,6 +112,7 @@ class DataService {
     }
   }
 
+  // Wrappers
   async getEmployees(): Promise<Employee[]> { if (!this.isDemoMode) { try { const d = await this.callApi('getEmployees'); if(Array.isArray(d)) return d; } catch(e){} } return [...this.employees]; }
   async addEmployee(emp: Employee): Promise<Employee> { if(!this.isDemoMode) await this.callApi('addEmployee', emp); this.employees.push(emp); return emp; }
   async updateEmployee(emp: Employee): Promise<Employee> { if(!this.isDemoMode) await this.callApi('updateEmployee', emp); return emp; }

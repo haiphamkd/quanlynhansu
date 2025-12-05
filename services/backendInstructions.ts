@@ -1,5 +1,10 @@
 export const GOOGLE_APPS_SCRIPT_CODE = `
+/**
+ * PHARMA HR BACKEND - FORM DATA SUPPORT
+ * Folder ID: 1QiPcqn--e7XH2pQDgth_rJM6fLNpmJGZ
+ */
 const DRIVE_FOLDER_ID = "1QiPcqn--e7XH2pQDgth_rJM6fLNpmJGZ"; 
+
 const SHEETS_CONFIG = {
   'NhanVien': ['ID', 'HoTen', 'NgaySinh', 'GioiTinh', 'ChucVu', 'TrinhDo', 'SDT', 'Email', 'NgayHopDong', 'NgayVaoLam', 'QueQuan', 'ThuongTru', 'CCCD', 'NgayCap', 'NoiCap', 'TrangThai', 'AvatarURL', 'HoSoURL', 'GhiChu'],
   'ChamCong': ['ID', 'MaNV', 'TenNV', 'Ngay', 'GioVao', 'Ca', 'TrangThai', 'GhiChu'],
@@ -29,25 +34,28 @@ function doGet(e) { return handleRequest(e); }
 function doPost(e) { return handleRequest(e); }
 
 function handleRequest(e) {
-  const lock = LockService.getScriptLock();
-  lock.tryLock(5000);
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
+    let action = e.parameter.action;
     let postData = {};
-    if (e.postData && e.postData.contents) {
-       try { postData = JSON.parse(e.postData.contents); } catch (err) {}
-    } else if (e.parameter.data) {
+
+    // SUPPORT FORM DATA (URL ENCODED)
+    if (e.parameter.data) {
        try { postData = JSON.parse(e.parameter.data); } catch (err) {}
+    } else if (e.postData && e.postData.contents) {
+       try { postData = JSON.parse(e.postData.contents); } catch (err) {}
     }
-    let action = e.parameter.action || postData.action;
+    
+    if (postData.action) action = postData.action;
     let result = {};
 
-    if (action === 'test') result = { success: true, message: 'Connected to GAS' };
+    if (action === 'test') result = { status: 'ok', message: 'Connected' };
     else if (action === 'login') {
        const users = getData(ss, 'Users');
+       // Clean comparison
        const user = users.find(u => String(u.username).trim() == String(postData.username).trim() && String(u.password).trim() == String(postData.password).trim());
        if (user) result = { success: true, user: { username: user.username, role: user.role, name: user.fullName, employeeId: user.employeeId } };
-       else result = { error: 'Tên đăng nhập hoặc mật khẩu không đúng' };
+       else result = { error: 'Sai tên đăng nhập hoặc mật khẩu' };
     }
     else if (action === 'getEmployees') result = getData(ss, 'NhanVien');
     else if (action === 'getFunds') result = getData(ss, 'QuyKhoa');
@@ -87,10 +95,12 @@ function handleRequest(e) {
        deleteRow(ss, 'LichTruc', postData.id, 0); 
        addRow(ss, 'LichTruc', postData);
     }
+
     return ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);
+
   } catch (e) {
-    return ContentService.createTextOutput(JSON.stringify({error: e.toString()})).setMimeType(ContentService.MimeType.JSON);
-  } finally { lock.releaseLock(); }
+    return ContentService.createTextOutput(JSON.stringify({error: 'Server Error: ' + e.toString()})).setMimeType(ContentService.MimeType.JSON);
+  }
 }
 
 function getData(ss, sheetName) {
