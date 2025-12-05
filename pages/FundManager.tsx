@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Wallet, TrendingUp, TrendingDown, Plus, Filter, Save, X } from 'lucide-react';
 import GenericTable from '../components/GenericTable';
+import { AppButton } from '../components/AppButton';
 import { FundTransaction, TransactionType } from '../types';
 import { dataService } from '../services/dataService';
 import { formatDateVN, formatCurrencyVN, formatNumberInput, parseNumberInput } from '../utils/helpers';
@@ -54,7 +55,7 @@ const FundManager: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Overview Cards - Neutral + Accent */}
+      {/* Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-teal-600 rounded-xl p-6 text-white shadow-lg relative overflow-hidden">
           <div className="relative z-10">
@@ -92,12 +93,9 @@ const FundManager: React.FC = () => {
              <input type="date" value={dateRange.to} onChange={e => setDateRange({...dateRange, to: e.target.value})} className="bg-transparent text-sm focus:outline-none w-28 text-gray-600 font-medium"/>
           </div>
         </div>
-        <button 
-          onClick={handleOpenModal}
-          className="h-9 bg-teal-600 text-white px-4 rounded-lg flex items-center justify-center hover:bg-teal-700 shadow-sm font-medium text-sm transition-colors"
-        >
-          <Plus size={16} className="mr-2" /> Thêm giao dịch
-        </button>
+        <AppButton variant="primary" icon={Plus} onClick={handleOpenModal}>
+           Thêm giao dịch
+        </AppButton>
       </div>
 
       <GenericTable 
@@ -115,7 +113,7 @@ const FundManager: React.FC = () => {
             className: 'w-24'
           },
           { header: 'Nội dung', accessor: 'content', className: 'font-medium text-gray-800' },
-          { header: 'Người thực hiện', accessor: 'performer', className: 'text-gray-500 text-xs' },
+          { header: 'Người thực hiện', accessor: 'performer', className: 'text-gray-500 text-xs hidden sm:table-cell' },
           { 
             header: 'Số tiền', 
             accessor: (item) => <div className={`text-right font-bold ${item.type === TransactionType.INCOME ? 'text-emerald-600' : 'text-rose-600'}`}>{item.type === TransactionType.INCOME ? '+' : '-'}{formatCurrencyVN(item.amount)}</div>,
@@ -124,20 +122,20 @@ const FundManager: React.FC = () => {
           { 
             header: 'Số dư cuối', 
             accessor: (item) => <div className="text-right text-gray-400 text-xs font-mono">{formatCurrencyVN(item.balanceAfter)}</div>,
-            className: 'text-right w-32'
+            className: 'text-right w-32 hidden md:table-cell'
           },
         ]}
       />
 
        {/* Modal */}
        {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900 bg-opacity-30 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 border border-gray-100">
-            <div className="flex justify-between items-center mb-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900 bg-opacity-40 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md border border-gray-100 flex flex-col max-h-[90vh]">
+            <div className="p-5 border-b border-gray-100 flex justify-between items-center">
                <h3 className="text-lg font-bold text-gray-800">Thêm giao dịch</h3>
-               <button onClick={() => setIsModalOpen(false)}><X size={20} className="text-gray-400 hover:text-gray-600" /></button>
+               <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
             </div>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto">
               <div className="grid grid-cols-2 gap-4">
                  <div>
                    <label className="block text-xs font-medium text-gray-500 mb-1">Ngày</label>
@@ -153,7 +151,7 @@ const FundManager: React.FC = () => {
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-500 mb-1">Số tiền (VNĐ)</label>
-                <input type="text" required value={formData.amount} onChange={e => setFormData({...formData, amount: formatNumberInput(e.target.value)})} className="block w-full border-gray-200 rounded-lg px-3 py-2 text-right font-bold text-gray-800 focus:ring-2 focus:ring-teal-500" placeholder="0" />
+                <input type="text" required value={formData.amount} onChange={e => setFormData({...formData, amount: formatNumberInput(e.target.value)})} className="block w-full border-gray-200 rounded-lg px-3 py-2 text-right font-bold text-gray-800 focus:ring-2 focus:ring-teal-500 text-lg" placeholder="0" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-500 mb-1">Nội dung</label>
@@ -165,9 +163,9 @@ const FundManager: React.FC = () => {
                 <input type="text" required value={formData.performer} onChange={e => setFormData({...formData, performer: e.target.value})} className="block w-full border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500" />
               </div>
               <div className="pt-4">
-                <button type="submit" className="w-full h-10 bg-teal-600 text-white rounded-lg hover:bg-teal-700 text-sm font-medium flex items-center justify-center shadow-sm transition-colors">
-                   <Save size={16} className="mr-2"/> Lưu giao dịch
-                </button>
+                <AppButton type="submit" variant="primary" icon={Save} className="w-full">
+                   Lưu giao dịch
+                </AppButton>
               </div>
             </form>
           </div>

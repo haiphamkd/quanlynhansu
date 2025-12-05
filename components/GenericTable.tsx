@@ -14,59 +14,66 @@ interface GenericTableProps<T> {
   actions?: (item: T) => React.ReactNode;
 }
 
-function GenericTable<T extends { id: string | number }>({ data, columns, onRowClick, actions }: GenericTableProps<T>) {
+function GenericTable<T extends { id: string }>({ data, columns, onRowClick, actions }: GenericTableProps<T>) {
   return (
-    <div className="overflow-x-auto bg-white rounded-lg shadow border border-gray-200">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
-          <tr>
-            {columns.map((col, idx) => (
-              <th
-                key={idx}
-                scope="col"
-                className={`px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${col.className || ''}`}
-              >
-                {col.header}
-              </th>
-            ))}
-            {actions && (
-              <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Thao tác
-              </th>
-            )}
-          </tr>
-        </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
-          {data.length > 0 ? (
-            data.map((item) => (
-              <tr 
-                key={item.id} 
-                className={`hover:bg-gray-50 transition-colors ${onRowClick ? 'cursor-pointer' : ''}`}
-                onClick={() => onRowClick && onRowClick(item)}
-              >
-                {columns.map((col, idx) => (
-                  <td key={idx} className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                    {typeof col.accessor === 'function' 
-                      ? col.accessor(item) 
-                      : (item[col.accessor] as unknown as React.ReactNode)}
-                  </td>
-                ))}
-                {actions && (
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    {actions(item)}
-                  </td>
-                )}
-              </tr>
-            ))
-          ) : (
+    <div className="overflow-hidden bg-white rounded-xl shadow-sm border border-gray-200">
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50/80 backdrop-blur-sm">
             <tr>
-              <td colSpan={columns.length + (actions ? 1 : 0)} className="px-6 py-10 text-center text-gray-500 text-sm">
-                Không có dữ liệu
-              </td>
+              {columns.map((col, idx) => (
+                <th
+                  key={idx}
+                  scope="col"
+                  className={`px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap ${col.className || ''}`}
+                >
+                  {col.header}
+                </th>
+              ))}
+              {actions && (
+                <th scope="col" className="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                  Thao tác
+                </th>
+              )}
             </tr>
-          )}
-        </tbody>
-      </table>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-100">
+            {data.length > 0 ? (
+              data.map((item) => (
+                <tr 
+                  key={item.id} 
+                  className={`hover:bg-teal-50/30 transition-colors duration-150 ${onRowClick ? 'cursor-pointer' : ''}`}
+                  onClick={() => onRowClick && onRowClick(item)}
+                >
+                  {columns.map((col, idx) => (
+                    <td key={idx} className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                      {typeof col.accessor === 'function' 
+                        ? col.accessor(item) 
+                        : (item[col.accessor] as unknown as React.ReactNode)}
+                    </td>
+                  ))}
+                  {actions && (
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      {actions(item)}
+                    </td>
+                  )}
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={columns.length + (actions ? 1 : 0)} className="px-6 py-12 text-center text-gray-500 text-sm flex flex-col items-center justify-center">
+                   <div className="bg-gray-50 p-4 rounded-full mb-3">
+                      <svg className="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
+                      </svg>
+                   </div>
+                   Không có dữ liệu
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

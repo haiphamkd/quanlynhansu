@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -6,7 +7,7 @@ import {
 import { Sparkles, Users, TrendingUp, AlertCircle, DollarSign, Pill } from 'lucide-react';
 import { dataService } from '../services/dataService';
 import { analyzeDepartmentData } from '../services/geminiService';
-import { formatCurrencyVN, formatDateVN } from '../utils/helpers'; // Import helper chuẩn
+import { formatDateVN, formatCurrencyVN } from '../utils/helpers';
 
 const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
@@ -29,6 +30,7 @@ const Dashboard: React.FC = () => {
           dataService.getReports()
         ]);
 
+        // Process Stats
         const balance = funds.length > 0 ? funds[funds.length - 1].balanceAfter : 0;
         const totalP = reports.reduce((acc, curr) => acc + curr.totalIssued, 0);
         const pending = reports.reduce((acc, curr) => acc + curr.notReceived, 0);
@@ -40,16 +42,19 @@ const Dashboard: React.FC = () => {
           pendingIssues: pending
         });
 
-        // Format data cho biểu đồ (dùng formatDateVN)
+        // Process Fund Chart Data (Last 5 transactions)
         setFundData(funds.slice(-5).map(f => ({
-          date: formatDateVN(f.date).substring(0, 5), // Lấy dd/mm
+          date: formatDateVN(f.date).substring(0, 5), // Short date for chart dd/mm
+          fullDate: formatDateVN(f.date),
           balance: f.balanceAfter,
           amount: f.amount,
           type: f.type
         })));
 
+        // Process Report Chart Data
         setReportData(reports.slice(-5).map(r => ({
           date: formatDateVN(r.date).substring(0, 5),
+          fullDate: formatDateVN(r.date),
           issued: r.totalIssued,
           missed: r.notReceived
         })));
@@ -76,16 +81,19 @@ const Dashboard: React.FC = () => {
           <h2 className="text-2xl font-bold text-gray-800 tracking-tight">Tổng quan</h2>
           <p className="text-gray-500 text-sm">Cập nhật tình hình hoạt động khoa Dược</p>
         </div>
-        <div className="text-xs text-gray-400 font-medium bg-white px-3 py-1 rounded-full border border-gray-200">
-          {/* Format ngày tháng chuẩn VN ở header */}
+        <div className="text-xs text-gray-500 font-medium bg-white px-3 py-1 rounded-full border border-gray-200 shadow-sm hidden sm:block">
           {new Date().toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
         </div>
       </div>
 
+      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-200 hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between mb-4">
-             <div className="p-2 bg-teal-50 rounded-lg text-teal-600"><Users size={20} /></div>
+             <div className="p-2 bg-teal-50 rounded-lg text-teal-600">
+               <Users size={20} />
+             </div>
+             <span className="text-[10px] font-bold text-green-700 bg-green-100 px-2 py-0.5 rounded-full border border-green-200">ACTIVE</span>
           </div>
           <div>
             <p className="text-sm text-gray-500 font-medium">Tổng nhân sự</p>
@@ -95,18 +103,21 @@ const Dashboard: React.FC = () => {
 
         <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-200 hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between mb-4">
-             <div className="p-2 bg-emerald-50 rounded-lg text-emerald-600"><DollarSign size={20} /></div>
+             <div className="p-2 bg-emerald-50 rounded-lg text-emerald-600">
+               <DollarSign size={20} />
+             </div>
           </div>
           <div>
             <p className="text-sm text-gray-500 font-medium">Quỹ hiện tại</p>
-            {/* Sử dụng formatCurrencyVN chuẩn */}
             <h3 className="text-2xl font-bold text-gray-900 mt-1">{formatCurrencyVN(stats.fundBalance)}</h3>
           </div>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-200 hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between mb-4">
-             <div className="p-2 bg-blue-50 rounded-lg text-blue-600"><Pill size={20} /></div>
+             <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
+               <Pill size={20} />
+             </div>
           </div>
           <div>
             <p className="text-sm text-gray-500 font-medium">Đơn thuốc (Tuần)</p>
@@ -116,8 +127,10 @@ const Dashboard: React.FC = () => {
 
         <div className="bg-white rounded-xl shadow-sm p-5 border border-gray-200 hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between mb-4">
-             <div className="p-2 bg-amber-50 rounded-lg text-amber-600"><AlertCircle size={20} /></div>
-             {stats.pendingIssues > 0 && <span className="text-xs font-semibold text-red-600 bg-red-50 px-2 py-0.5 rounded-full">Cần xử lý</span>}
+             <div className="p-2 bg-amber-50 rounded-lg text-amber-600">
+               <AlertCircle size={20} />
+             </div>
+             {stats.pendingIssues > 0 && <span className="text-[10px] font-bold text-red-700 bg-red-100 px-2 py-0.5 rounded-full border border-red-200">CẦN XỬ LÝ</span>}
           </div>
           <div>
             <p className="text-sm text-gray-500 font-medium">Chưa nhận thuốc</p>
@@ -126,22 +139,32 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
+      {/* AI Insight Section */}
       <div className="bg-gradient-to-br from-teal-600 to-cyan-700 rounded-xl p-6 shadow-lg text-white relative overflow-hidden">
-        <div className="absolute top-0 right-0 p-4 opacity-10"><Sparkles size={150} /></div>
+        <div className="absolute top-0 right-0 p-4 opacity-10">
+          <Sparkles size={150} />
+        </div>
         <div className="relative z-10">
           <div className="flex items-center space-x-2 mb-3">
-            <div className="bg-white/20 p-1.5 rounded-md"><Sparkles className="text-white" size={16} /></div>
+            <div className="bg-white/20 p-1.5 rounded-md backdrop-blur-sm">
+              <Sparkles className="text-white" size={16} />
+            </div>
             <h3 className="font-bold text-lg tracking-wide">Trợ lý AI Phân tích</h3>
           </div>
-          <p className="text-teal-100 leading-relaxed text-sm md:text-base border-l-2 border-teal-400 pl-4">
+          <p className="text-teal-50 leading-relaxed text-sm md:text-base border-l-2 border-teal-400 pl-4 bg-teal-800/20 py-2 pr-2 rounded-r-lg">
             {aiInsight || "Đang phân tích dữ liệu..."}
           </p>
         </div>
       </div>
 
+      {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Fund Chart */}
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <h3 className="font-semibold text-gray-800 mb-6 flex items-center"><TrendingUp size={18} className="mr-2 text-gray-400" /> Biến động quỹ</h3>
+          <h3 className="font-semibold text-gray-800 mb-6 flex items-center">
+            <TrendingUp size={18} className="mr-2 text-gray-400" />
+            Biến động quỹ
+          </h3>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={fundData}>
@@ -153,23 +176,36 @@ const Dashboard: React.FC = () => {
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
                 <XAxis dataKey="date" tick={{fontSize: 12, fill: '#9ca3af'}} axisLine={false} tickLine={false} />
-                <YAxis tick={{fontSize: 12, fill: '#9ca3af'}} axisLine={false} tickLine={false} />
-                <Tooltip />
+                <YAxis tick={{fontSize: 12, fill: '#9ca3af'}} axisLine={false} tickLine={false} tickFormatter={(val) => `${val/1000000}M`} />
+                <Tooltip 
+                  labelFormatter={(label, payload) => payload[0]?.payload.fullDate}
+                  formatter={(value: number) => formatCurrencyVN(value)}
+                  contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}}
+                />
                 <Area type="monotone" dataKey="balance" stroke="#0d9488" strokeWidth={2} fillOpacity={1} fill="url(#colorBalance)" name="Số dư" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
 
+        {/* Prescription Chart */}
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <h3 className="font-semibold text-gray-800 mb-6 flex items-center"><Pill size={18} className="mr-2 text-gray-400" /> Tình hình cấp phát</h3>
+          <h3 className="font-semibold text-gray-800 mb-6 flex items-center">
+            <Pill size={18} className="mr-2 text-gray-400" />
+            Tình hình cấp phát
+          </h3>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={reportData} barSize={20}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
                 <XAxis dataKey="date" tick={{fontSize: 12, fill: '#9ca3af'}} axisLine={false} tickLine={false} />
                 <YAxis tick={{fontSize: 12, fill: '#9ca3af'}} axisLine={false} tickLine={false} />
-                <Tooltip />
+                <Tooltip 
+                  labelFormatter={(label, payload) => payload[0]?.payload.fullDate}
+                  cursor={{fill: '#f9fafb'}}
+                  contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}}
+                />
+                <Legend iconType="circle" wrapperStyle={{paddingTop: '20px'}} />
                 <Bar dataKey="issued" name="Đã cấp" fill="#3b82f6" radius={[4, 4, 0, 0]} />
                 <Bar dataKey="missed" name="Chưa nhận" fill="#f43f5e" radius={[4, 4, 0, 0]} />
               </BarChart>

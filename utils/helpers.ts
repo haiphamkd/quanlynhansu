@@ -1,60 +1,50 @@
-// 1. DATE FORMATTING (dd/mm/yyyy)
-export const formatDateVN = (dateString: string | Date | null | undefined): string => {
-  if (!dateString) return '';
+
+export const formatDateVN = (isoDateString: string): string => {
+  if (!isoDateString) return '';
   try {
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return '';
-    return new Intl.DateTimeFormat('vi-VN', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    }).format(date); // Output: 01/01/2024
+    // If it's already in standard format (simple check), just return
+    if (isoDateString.match(/^\d{2}\/\d{2}\/\d{4}$/)) return isoDateString;
+
+    const date = new Date(isoDateString);
+    if (isNaN(date.getTime())) return isoDateString;
+    
+    // Explicitly format as dd/mm/yyyy
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    
+    return `${day}/${month}/${year}`;
   } catch (e) {
-    return String(dateString);
+    return isoDateString;
   }
 };
 
-// 2. NUMBER FORMATTING (1.234.567)
-export const formatNumberInput = (value: number | string | undefined): string => {
-  if (value === undefined || value === null || value === '') return '0';
-  const num = typeof value === 'string' ? parseFloat(value) : value;
-  if (isNaN(num)) return '0';
-  return new Intl.NumberFormat('vi-VN').format(num);
-};
-
-export const parseNumberInput = (value: string): number => {
-  if (!value) return 0;
-  // Xóa dấu chấm (phân cách hàng nghìn) trước khi parse
-  return Number(value.replace(/\./g, ''));
+export const formatDateTimeVN = (isoDateString: string): string => {
+   if (!isoDateString) return '';
+   const date = new Date(isoDateString);
+   if (isNaN(date.getTime())) return isoDateString;
+   return new Intl.DateTimeFormat('vi-VN', {
+     day: '2-digit', month: '2-digit', year: 'numeric',
+     hour: '2-digit', minute: '2-digit'
+   }).format(date);
 };
 
 export const formatCurrencyVN = (amount: number): string => {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
 };
 
-// 3. USERNAME GENERATOR
-// "Phạm Phi Hải" -> "haipp"
-export const generateUsername = (fullName: string): string => {
-  if (!fullName) return '';
-  
-  // Xóa dấu tiếng Việt
-  const nonAccentName = fullName
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/đ/g, 'd').replace(/Đ/g, 'D')
-    .toLowerCase();
+export const formatNumberInput = (value: number | string): string => {
+  if (!value && value !== 0) return '';
+  // Remove non-digits
+  const cleanVal = String(value).replace(/\D/g, '');
+  // Format with dots for thousands
+  return cleanVal.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+};
 
-  // Tách từ
-  const parts = nonAccentName.trim().split(/\s+/);
-  if (parts.length === 0) return '';
-
-  // Lấy tên (từ cuối cùng)
-  const lastName = parts[parts.length - 1];
-
-  // Lấy chữ cái đầu của họ và tên đệm
-  const initials = parts.slice(0, parts.length - 1).map(p => p.charAt(0)).join('');
-
-  return `${lastName}${initials}`;
+export const parseNumberInput = (value: string): number => {
+  if (!value) return 0;
+  // Remove dots to parse back to number
+  return Number(String(value).replace(/\./g, ''));
 };
 
 export const getCurrentTime = (): string => {

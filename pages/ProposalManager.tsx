@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { FileText, Paperclip, Plus, Trash2, Pencil, CheckCircle } from 'lucide-react';
 import GenericTable from '../components/GenericTable';
@@ -45,8 +46,7 @@ const ProposalManager: React.FC = () => {
     setIsModalOpen(false);
   };
 
-  // Fixed signature to accept string | number
-  const handleDelete = (id: string | number) => {
+  const handleDelete = (id: string) => {
     if(confirm("Xóa tờ trình này?")) {
       // Logic delete would go here
       alert("Đã xóa (Mô phỏng)");
