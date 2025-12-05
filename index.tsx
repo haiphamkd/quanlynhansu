@@ -12,9 +12,8 @@ import EvaluationManager from "./pages/EvaluationManager";
 import ProposalManager from "./pages/ProposalManager";
 import ShiftManager from "./pages/ShiftManager";
 import { User } from "./types";
-import { GOOGLE_APPS_SCRIPT_CODE } from "./services/backendInstructions";
 
-// Error Boundary for better debugging
+// Error Boundary with proper types
 interface ErrorBoundaryProps {
   children?: React.ReactNode;
 }
@@ -25,7 +24,12 @@ interface ErrorBoundaryState {
 }
 
 class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  state: ErrorBoundaryState = { hasError: false, error: null };
+  public state: ErrorBoundaryState;
+
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
 
   static getDerivedStateFromError(error: Error) {
     return { hasError: true, error };
@@ -39,8 +43,8 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
     if (this.state.hasError) {
       return <div className="p-10 text-red-600">Something went wrong: {this.state.error?.message}</div>;
     }
-    // Fix: Cast 'this' to any to access props, resolving TS error "Property 'props' does not exist on type 'ErrorBoundary'"
-    return (this as any).props.children;
+    // Access props through the component instance
+    return this.props.children;
   }
 }
 

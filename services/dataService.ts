@@ -1,4 +1,3 @@
-
 import { supabase } from './supabaseClient';
 import { Employee, FundTransaction, PrescriptionReport, Attendance, AnnualEvaluation, Proposal, User, Shift, TempData } from '../types';
 
@@ -17,7 +16,7 @@ class DataService {
         .from('nguoi_dung')
         .select('*')
         .eq('ten_dang_nhap', username)
-        .eq('mat_khau', password) // Thực tế nên hash password
+        .eq('mat_khau', password)
         .single();
 
       if (error || !data) {
@@ -34,13 +33,13 @@ class DataService {
         } 
       };
     } catch (e: any) {
-      return { success: false, error: 'Lỗi kết nối CSDL Supabase' };
+      return { success: false, error: 'Lỗi kết nối CSDL Supabase: ' + e.message };
     }
   }
 
   // --- 2. NHÂN VIÊN (Bảng: nhan_vien) ---
   async getEmployees(): Promise<Employee[]> {
-    const { data } = await supabase.from('nhan_vien').select('*');
+    const { data } = await supabase.from('nhan_vien').select('*').order('ma_nv', { ascending: true });
     if (!data) return [];
     
     return data.map((item: any) => ({
@@ -68,18 +67,20 @@ class DataService {
 
   async addEmployee(emp: Employee): Promise<Employee> {
     const dbItem = this.mapEmployeeToDb(emp);
-    await supabase.from('nhan_vien').insert(dbItem);
+    const { error } = await supabase.from('nhan_vien').insert(dbItem);
+    if (error) throw new Error(error.message);
     return emp;
   }
 
-  async importEmployees(employees: Employee[]): Promise<boolean> {
+  // Hỗ trợ Import nhiều nhân viên
+  async importEmployees(employees: Employee[]): Promise<{success: boolean, error?: string}> {
     const dbItems = employees.map(emp => this.mapEmployeeToDb(emp));
     const { error } = await supabase.from('nhan_vien').insert(dbItems);
     if (error) {
         console.error("Import error:", error);
-        return false;
+        return { success: false, error: error.message };
     }
-    return true;
+    return { success: true };
   }
 
   private mapEmployeeToDb(emp: Employee) {
@@ -108,18 +109,20 @@ class DataService {
 
   async updateEmployee(emp: Employee): Promise<Employee> {
     const dbItem = this.mapEmployeeToDb(emp);
-    await supabase.from('nhan_vien').update(dbItem).eq('ma_nv', emp.id);
+    const { error } = await supabase.from('nhan_vien').update(dbItem).eq('ma_nv', emp.id);
+    if (error) throw new Error(error.message);
     return emp;
   }
 
-  async deleteEmployee(id: string): Promise<boolean> {
-    await supabase.from('nhan_vien').delete().eq('ma_nv', id);
-    return true;
+  async deleteEmployee(id: string): Promise<{success: boolean, error?: string}> {
+    const { error } = await supabase.from('nhan_vien').delete().eq('ma_nv', id);
+    if (error) return { success: false, error: error.message };
+    return { success: true };
   }
 
   // --- 3. CHẤM CÔNG (Bảng: cham_cong) ---
   async getAttendance(): Promise<Attendance[]> {
-    const { data } = await supabase.from('cham_cong').select('*');
+    const { data } = await supabase.from('cham_cong').select('*').order('ngay', { ascending: false });
     if (!data) return [];
     return data.map((item: any) => ({
         id: item.id,
@@ -143,8 +146,9 @@ class DataService {
         trang_thai: r.status,
         ghi_chu: r.notes
     }));
-    const { error } = await supabase.from('cham_cong').upsert(dbRecords, { onConflict: 'ma_nv, ngay' } as any);
-    if (error) console.error(error);
+    // Dùng upsert để cập nhật nếu đã có chấm công ngày đó
+    const { error } = await supabase.from('cham_cong').upsert(dbRecords); 
+    if (error) console.error("Save attendance error:", error);
     return !error;
   }
 
@@ -164,6 +168,7 @@ class DataService {
   }
 
   async addFundTransaction(trans: FundTransaction): Promise<FundTransaction> {
+    // Lấy số dư cuối cùng
     const { data: lastTrans } = await supabase.from('quy_khoa').select('so_du_cuoi').order('id', { ascending: false }).limit(1).single();
     const lastBalance = lastTrans ? lastTrans.so_du_cuoi : 0;
     const newBalance = trans.type === 'Thu' ? lastBalance + trans.amount : lastBalance - trans.amount;
@@ -182,7 +187,7 @@ class DataService {
 
   // --- 5. BÁO CÁO (Bảng: bao_cao_don) ---
   async getReports(): Promise<PrescriptionReport[]> {
-    const { data } = await supabase.from('bao_cao_don').select('*');
+    const { data } = await supabase.from('bao_cao_don').select('*').order('ngay', { ascending: false });
     if (!data) return [];
     return data.map((item: any) => ({
         id: item.id,
@@ -206,6 +211,7 @@ class DataService {
         ma_nguoi_bao_cao: report.reporterId,
         dinh_kem: report.attachmentUrls
     };
+    // Nếu ID là số (từ DB) thì update, nếu string (mock/new) thì insert
     if (typeof report.id === 'number') {
         await supabase.from('bao_cao_don').update(dbItem).eq('id', report.id);
     } else {
@@ -215,8 +221,8 @@ class DataService {
   }
 
   async deleteReport(id: string): Promise<boolean> {
-    await supabase.from('bao_cao_don').delete().eq('id', id);
-    return true;
+    const { error } = await supabase.from('bao_cao_don').delete().eq('id', id);
+    return !error;
   }
 
   // --- 6. ĐÁNH GIÁ (Bảng: danh_gia) ---
@@ -260,13 +266,13 @@ class DataService {
   }
 
   async deleteEvaluation(id: string): Promise<boolean> {
-    await supabase.from('danh_gia').delete().eq('id', id);
-    return true;
+    const { error } = await supabase.from('danh_gia').delete().eq('id', id);
+    return !error;
   }
 
   // --- 7. TỜ TRÌNH (Bảng: to_trinh) ---
   async getProposals(): Promise<Proposal[]> {
-    const { data } = await supabase.from('to_trinh').select('*');
+    const { data } = await supabase.from('to_trinh').select('*').order('ngay', { ascending: false });
     if (!data) return [];
     return data.map((item: any) => ({
         id: item.id,
@@ -325,14 +331,22 @@ class DataService {
         thu_7: shift.sat,
         cn: shift.sun
     };
-    await supabase.from('lich_truc').upsert(dbItem);
-    return true;
+    const { error } = await supabase.from('lich_truc').upsert(dbItem);
+    return !error;
   }
 
   // --- 9. DROPDOWN (Bảng: danh_muc) ---
   async getDropdowns(): Promise<TempData[]> {
     const { data } = await supabase.from('danh_muc').select('*');
-    if (!data) return [];
+    if (!data || data.length === 0) {
+        // Fallback data nếu bảng rỗng
+        return [
+            { type: 'TrinhDo', value: 'Dược sĩ Đại học' },
+            { type: 'TrinhDo', value: 'Dược sĩ CKI' },
+            { type: 'TrinhDo', value: 'Dược sĩ CKII' },
+            { type: 'TrangThai', value: 'Đang làm việc' }
+        ];
+    }
     return data.map((item: any) => ({
         type: item.loai,
         value: item.gia_tri

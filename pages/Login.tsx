@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Pill, Lock, User as UserIcon, PlayCircle, AlertCircle, LogIn } from 'lucide-react';
 import { User } from '../types';
