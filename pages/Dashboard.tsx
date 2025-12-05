@@ -160,7 +160,7 @@ const Dashboard: React.FC = () => {
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Fund Chart */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 min-w-0">
           <h3 className="font-semibold text-gray-800 mb-6 flex items-center">
             <TrendingUp size={18} className="mr-2 text-gray-400" />
             Biến động quỹ
@@ -189,7 +189,7 @@ const Dashboard: React.FC = () => {
         </div>
 
         {/* Prescription Chart */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 min-w-0">
           <h3 className="font-semibold text-gray-800 mb-6 flex items-center">
             <Pill size={18} className="mr-2 text-gray-400" />
             Tình hình cấp phát
@@ -218,4 +218,3 @@ const Dashboard: React.FC = () => {
 };
 
 export default Dashboard;
-    
