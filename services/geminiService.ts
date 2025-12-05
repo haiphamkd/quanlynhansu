@@ -1,11 +1,10 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { FundTransaction, PrescriptionReport } from "../types";
 
 export const analyzeDepartmentData = async (
   funds: FundTransaction[],
   reports: PrescriptionReport[]
 ): Promise<string> => {
-  // Safe access to process.env to avoid ReferenceError in browser
   const apiKey = (typeof process !== 'undefined' && process.env) ? process.env.API_KEY : '';
 
   if (!apiKey) return "Vui lòng cấu hình API Key để sử dụng tính năng AI.";
@@ -26,14 +25,12 @@ export const analyzeDepartmentData = async (
   `;
 
   try {
-    // Initialize inside the function to avoid top-level crashes
-    const ai = new GoogleGenAI({ apiKey: apiKey });
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: prompt,
-    });
-    return response.text || "Không thể phân tích dữ liệu.";
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    return response.text() || "Không thể phân tích dữ liệu.";
   } catch (error) {
     console.error("Gemini API Error:", error);
     return "Đã xảy ra lỗi khi gọi AI.";
