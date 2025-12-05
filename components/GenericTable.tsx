@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 interface Column<T> {
@@ -13,7 +14,7 @@ interface GenericTableProps<T> {
   actions?: (item: T) => React.ReactNode;
 }
 
-function GenericTable<T extends { id: string }>({ data, columns, onRowClick, actions }: GenericTableProps<T>) {
+function GenericTable<T extends { id: string | number }>({ data, columns, onRowClick, actions }: GenericTableProps<T>) {
   return (
     <div className="overflow-x-auto bg-white rounded-lg shadow border border-gray-200">
       <table className="min-w-full divide-y divide-gray-200">

@@ -16,13 +16,15 @@ export const formatDateVN = (dateString: string | Date | null | undefined): stri
 
 // 2. NUMBER FORMATTING (1.234.567)
 export const formatNumberInput = (value: number | string | undefined): string => {
-  if (value === undefined || value === null || value === '') return '';
-  const numStr = String(value).replace(/\D/g, ''); // Chỉ giữ lại số
-  return numStr.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  if (value === undefined || value === null || value === '') return '0';
+  const num = typeof value === 'string' ? parseFloat(value) : value;
+  if (isNaN(num)) return '0';
+  return new Intl.NumberFormat('vi-VN').format(num);
 };
 
 export const parseNumberInput = (value: string): number => {
   if (!value) return 0;
+  // Xóa dấu chấm (phân cách hàng nghìn) trước khi parse
   return Number(value.replace(/\./g, ''));
 };
 
