@@ -10,83 +10,43 @@ const FundManager: React.FC = () => {
   const [funds, setFunds] = useState<FundTransaction[]>([]);
   const [filteredFunds, setFilteredFunds] = useState<FundTransaction[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  
-  // Stats
   const [totals, setTotals] = useState({ balance: 0, income: 0, expense: 0 });
-
-  // Filters
   const [dateRange, setDateRange] = useState({
     from: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0], 
     to: new Date().toISOString().split('T')[0]
   });
-
   const [formData, setFormData] = useState({
-    date: new Date().toISOString().split('T')[0],
-    type: TransactionType.INCOME,
-    content: '',
-    amount: '', // String for formatting
-    performer: ''
+    date: new Date().toISOString().split('T')[0], type: TransactionType.INCOME, content: '', amount: '', performer: ''
   });
-
-  // Load history contents for dropdown
   const [historyContents, setHistoryContents] = useState<string[]>([]);
 
-  // Current User
   const getCurrentUser = () => {
-     try {
-       return JSON.parse(localStorage.getItem('pharmahr_user') || '{}');
-     } catch { return { name: '' }; }
+     try { return JSON.parse(localStorage.getItem('pharmahr_user') || '{}'); } catch { return { name: '' }; }
   };
 
-  useEffect(() => {
-    loadFunds();
-  }, []);
+  useEffect(() => { loadFunds(); }, []);
+  useEffect(() => { filterData(); setHistoryContents([...new Set(funds.map(f => f.content))]); }, [funds, dateRange]);
 
-  useEffect(() => {
-    filterData();
-    // Unique contents for suggestions
-    setHistoryContents([...new Set(funds.map(f => f.content))]);
-  }, [funds, dateRange]);
-
-  const loadFunds = async () => {
-    const data = await dataService.getFunds();
-    setFunds(data);
-  };
+  const loadFunds = async () => { setFunds(await dataService.getFunds()); };
 
   const filterData = () => {
-    const filtered = funds.filter(f => 
-      f.date >= dateRange.from && f.date <= dateRange.to
-    );
+    const filtered = funds.filter(f => f.date >= dateRange.from && f.date <= dateRange.to);
     setFilteredFunds(filtered);
-
     const income = filtered.filter(f => f.type === TransactionType.INCOME).reduce((sum, f) => sum + f.amount, 0);
     const expense = filtered.filter(f => f.type === TransactionType.EXPENSE).reduce((sum, f) => sum + f.amount, 0);
     const currentBalance = funds.length > 0 ? funds[funds.length - 1].balanceAfter : 0;
-
     setTotals({ balance: currentBalance, income, expense });
   };
 
   const handleOpenModal = () => {
      const user = getCurrentUser();
-     setFormData({
-        date: new Date().toISOString().split('T')[0],
-        type: TransactionType.INCOME,
-        content: '',
-        amount: '',
-        performer: user.name || ''
-     });
+     setFormData({ date: new Date().toISOString().split('T')[0], type: TransactionType.INCOME, content: '', amount: '', performer: user.name || '' });
      setIsModalOpen(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newTrans = {
-      ...formData,
-      amount: parseNumberInput(formData.amount),
-      id: `T-${Date.now()}`,
-      balanceAfter: 0 
-    } as FundTransaction;
-
+    const newTrans = { ...formData, amount: parseNumberInput(formData.amount), id: `T-${Date.now()}`, balanceAfter: 0 } as FundTransaction;
     await dataService.addFundTransaction(newTrans);
     setIsModalOpen(false);
     loadFunds();
@@ -94,73 +54,76 @@ const FundManager: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Overview Cards */}
+      {/* Overview Cards - Neutral + Accent */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-gradient-to-br from-teal-500 to-teal-700 rounded-xl p-6 text-white shadow-md">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-medium opacity-90 text-sm">TỔNG QUỸ HIỆN TẠI</h3>
-            <Wallet className="opacity-80" />
+        <div className="bg-teal-600 rounded-xl p-6 text-white shadow-lg relative overflow-hidden">
+          <div className="relative z-10">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-medium text-teal-100 text-sm uppercase tracking-wider">TỔNG QUỸ</h3>
+              <Wallet className="text-teal-200" size={20} />
+            </div>
+            <p className="text-3xl font-bold tracking-tight">{formatCurrencyVN(totals.balance)}</p>
           </div>
-          <p className="text-3xl font-bold">{formatCurrencyVN(totals.balance)}</p>
+          <div className="absolute -bottom-4 -right-4 bg-white opacity-5 w-24 h-24 rounded-full"></div>
         </div>
         <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-             <h3 className="font-medium text-gray-500 text-sm uppercase">Tổng Thu (Kỳ này)</h3>
-             <div className="bg-green-100 p-2 rounded-full text-green-600"><TrendingUp size={18} /></div>
+          <div className="flex items-center justify-between mb-2">
+             <h3 className="font-medium text-gray-500 text-xs uppercase tracking-wider">Tổng Thu</h3>
+             <div className="bg-emerald-50 p-1.5 rounded-md text-emerald-600"><TrendingUp size={16} /></div>
           </div>
           <p className="text-2xl font-bold text-gray-800">{formatCurrencyVN(totals.income)}</p>
         </div>
         <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-             <h3 className="font-medium text-gray-500 text-sm uppercase">Tổng Chi (Kỳ này)</h3>
-             <div className="bg-red-100 p-2 rounded-full text-red-600"><TrendingDown size={18} /></div>
+          <div className="flex items-center justify-between mb-2">
+             <h3 className="font-medium text-gray-500 text-xs uppercase tracking-wider">Tổng Chi</h3>
+             <div className="bg-rose-50 p-1.5 rounded-md text-rose-600"><TrendingDown size={16} /></div>
           </div>
           <p className="text-2xl font-bold text-gray-800">{formatCurrencyVN(totals.expense)}</p>
         </div>
       </div>
 
       {/* Controls */}
-      <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-4 bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-        <div className="flex items-center gap-2 w-full md:w-auto">
-          <div className="flex items-center space-x-2 border rounded-md px-3 py-1.5 bg-gray-50">
-             <Filter size={16} className="text-gray-400" />
-             <input type="date" value={dateRange.from} onChange={e => setDateRange({...dateRange, from: e.target.value})} className="bg-transparent text-sm focus:outline-none w-32"/>
-             <span className="text-gray-400">-</span>
-             <input type="date" value={dateRange.to} onChange={e => setDateRange({...dateRange, to: e.target.value})} className="bg-transparent text-sm focus:outline-none w-32"/>
+      <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-4">
+        <div className="flex items-center gap-2 w-full md:w-auto bg-white p-1 rounded-lg border border-gray-200 shadow-sm">
+          <div className="flex items-center space-x-2 px-3 py-1.5">
+             <Filter size={14} className="text-gray-400" />
+             <input type="date" value={dateRange.from} onChange={e => setDateRange({...dateRange, from: e.target.value})} className="bg-transparent text-sm focus:outline-none w-28 text-gray-600 font-medium"/>
+             <span className="text-gray-300">-</span>
+             <input type="date" value={dateRange.to} onChange={e => setDateRange({...dateRange, to: e.target.value})} className="bg-transparent text-sm focus:outline-none w-28 text-gray-600 font-medium"/>
           </div>
         </div>
         <button 
           onClick={handleOpenModal}
-          className="h-10 bg-indigo-600 text-white px-4 rounded-lg flex items-center justify-center hover:bg-indigo-700 shadow-sm font-medium text-sm whitespace-nowrap"
+          className="h-9 bg-teal-600 text-white px-4 rounded-lg flex items-center justify-center hover:bg-teal-700 shadow-sm font-medium text-sm transition-colors"
         >
-          <Plus size={18} className="mr-2" /> Thêm giao dịch
+          <Plus size={16} className="mr-2" /> Thêm giao dịch
         </button>
       </div>
 
       <GenericTable 
         data={[...filteredFunds].reverse()}
         columns={[
-          { header: 'Ngày', accessor: (item) => formatDateVN(item.date), className: 'w-28' },
+          { header: 'Ngày', accessor: (item) => formatDateVN(item.date), className: 'w-28 text-gray-500' },
           { 
             header: 'Loại', 
             accessor: (item) => (
-              <span className={`flex items-center font-medium ${item.type === TransactionType.INCOME ? 'text-green-600' : 'text-red-600'}`}>
+              <span className={`flex items-center font-medium text-xs ${item.type === TransactionType.INCOME ? 'text-emerald-600' : 'text-rose-600'}`}>
                 {item.type === TransactionType.INCOME ? <TrendingUp size={14} className="mr-1" /> : <TrendingDown size={14} className="mr-1" />}
                 {item.type}
               </span>
             ),
             className: 'w-24'
           },
-          { header: 'Nội dung', accessor: 'content' },
-          { header: 'Người thực hiện', accessor: 'performer' },
+          { header: 'Nội dung', accessor: 'content', className: 'font-medium text-gray-800' },
+          { header: 'Người thực hiện', accessor: 'performer', className: 'text-gray-500 text-xs' },
           { 
             header: 'Số tiền', 
-            accessor: (item) => <div className="text-right font-medium">{formatCurrencyVN(item.amount)}</div>,
+            accessor: (item) => <div className={`text-right font-bold ${item.type === TransactionType.INCOME ? 'text-emerald-600' : 'text-rose-600'}`}>{item.type === TransactionType.INCOME ? '+' : '-'}{formatCurrencyVN(item.amount)}</div>,
             className: 'text-right w-32'
           },
           { 
-            header: 'Số dư sau GD', 
-            accessor: (item) => <div className="text-right text-gray-500 text-xs">{formatCurrencyVN(item.balanceAfter)}</div>,
+            header: 'Số dư cuối', 
+            accessor: (item) => <div className="text-right text-gray-400 text-xs font-mono">{formatCurrencyVN(item.balanceAfter)}</div>,
             className: 'text-right w-32'
           },
         ]}
@@ -168,51 +131,41 @@ const FundManager: React.FC = () => {
 
        {/* Modal */}
        {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
-            <h3 className="text-lg font-bold mb-4">Thêm giao dịch mới</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900 bg-opacity-30 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 border border-gray-100">
+            <div className="flex justify-between items-center mb-6">
+               <h3 className="text-lg font-bold text-gray-800">Thêm giao dịch</h3>
+               <button onClick={() => setIsModalOpen(false)}><X size={20} className="text-gray-400 hover:text-gray-600" /></button>
+            </div>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Ngày</label>
-                <input type="date" required value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="mt-1 block w-full border border-gray-300 rounded-md p-2 h-10" />
+              <div className="grid grid-cols-2 gap-4">
+                 <div>
+                   <label className="block text-xs font-medium text-gray-500 mb-1">Ngày</label>
+                   <input type="date" required value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="block w-full border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500" />
+                 </div>
+                 <div>
+                   <label className="block text-xs font-medium text-gray-500 mb-1">Loại</label>
+                   <select value={formData.type} onChange={e => setFormData({...formData, type: e.target.value as TransactionType})} className="block w-full border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500">
+                     <option value={TransactionType.INCOME}>Thu</option>
+                     <option value={TransactionType.EXPENSE}>Chi</option>
+                   </select>
+                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Loại</label>
-                <select value={formData.type} onChange={e => setFormData({...formData, type: e.target.value as TransactionType})} className="mt-1 block w-full border border-gray-300 rounded-md p-2 h-10">
-                  <option value={TransactionType.INCOME}>Thu</option>
-                  <option value={TransactionType.EXPENSE}>Chi</option>
-                </select>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Số tiền (VNĐ)</label>
+                <input type="text" required value={formData.amount} onChange={e => setFormData({...formData, amount: formatNumberInput(e.target.value)})} className="block w-full border-gray-200 rounded-lg px-3 py-2 text-right font-bold text-gray-800 focus:ring-2 focus:ring-teal-500" placeholder="0" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Số tiền (VNĐ)</label>
-                <input 
-                  type="text" required
-                  value={formData.amount}
-                  onChange={e => setFormData({...formData, amount: formatNumberInput(e.target.value)})}
-                  className="mt-1 block w-full border border-gray-300 rounded-md p-2 h-10 text-right font-mono" 
-                />
+                <label className="block text-xs font-medium text-gray-500 mb-1">Nội dung</label>
+                <input type="text" required list="contents" value={formData.content} onChange={e => setFormData({...formData, content: e.target.value})} className="block w-full border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500" placeholder="Nhập nội dung..." />
+                <datalist id="contents">{historyContents.map((c, i) => <option key={i} value={c} />)}</datalist>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Nội dung</label>
-                <input 
-                  type="text" required list="contents"
-                  value={formData.content}
-                  onChange={e => setFormData({...formData, content: e.target.value})}
-                  className="mt-1 block w-full border border-gray-300 rounded-md p-2 h-10" 
-                />
-                <datalist id="contents">
-                  {historyContents.map((c, i) => <option key={i} value={c} />)}
-                </datalist>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Người thực hiện</label>
+                <input type="text" required value={formData.performer} onChange={e => setFormData({...formData, performer: e.target.value})} className="block w-full border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500" />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Người thực hiện</label>
-                <input type="text" required value={formData.performer} onChange={e => setFormData({...formData, performer: e.target.value})} className="mt-1 block w-full border border-gray-300 rounded-md p-2 h-10" />
-              </div>
-              <div className="flex justify-end space-x-3 pt-4 border-t mt-2">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="h-10 px-4 border rounded hover:bg-gray-50 text-sm font-medium flex items-center">
-                   <X size={16} className="mr-2"/> Hủy
-                </button>
-                <button type="submit" className="h-10 px-4 bg-teal-600 text-white rounded hover:bg-teal-700 text-sm font-medium flex items-center">
+              <div className="pt-4">
+                <button type="submit" className="w-full h-10 bg-teal-600 text-white rounded-lg hover:bg-teal-700 text-sm font-medium flex items-center justify-center shadow-sm transition-colors">
                    <Save size={16} className="mr-2"/> Lưu giao dịch
                 </button>
               </div>

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
@@ -16,21 +15,32 @@ import { User } from "./types";
 import { GOOGLE_APPS_SCRIPT_CODE } from "./services/backendInstructions";
 
 // Error Boundary for better debugging
-class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: Error | null}> {
-  constructor(props: {children: React.ReactNode}) {
-    super(props);
-    this.state = { hasError: false, error: null };
-  }
+interface ErrorBoundaryProps {
+  children?: React.ReactNode;
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error: Error | null;
+}
+
+class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  state: ErrorBoundaryState = { hasError: false, error: null };
 
   static getDerivedStateFromError(error: Error) {
     return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error("ErrorBoundary caught an error", error, errorInfo);
   }
 
   render() {
     if (this.state.hasError) {
       return <div className="p-10 text-red-600">Something went wrong: {this.state.error?.message}</div>;
     }
-    return this.props.children;
+    // Fix: Cast 'this' to any to access props, resolving TS error "Property 'props' does not exist on type 'ErrorBoundary'"
+    return (this as any).props.children;
   }
 }
 
