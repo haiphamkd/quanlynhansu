@@ -2,12 +2,15 @@
 import React from 'react';
 import { LucideIcon } from 'lucide-react';
 
-export interface AppButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+export interface AppButtonProps extends React.HTMLAttributes<HTMLElement> {
   variant?: 'primary' | 'secondary' | 'danger' | 'warning' | 'ghost' | 'outline';
   size?: 'sm' | 'md' | 'lg';
   icon?: LucideIcon;
   loading?: boolean;
   as?: React.ElementType;
+  disabled?: boolean;
+  type?: "button" | "submit" | "reset";
+  [key: string]: any;
 }
 
 export const AppButton: React.FC<AppButtonProps> = ({
@@ -42,7 +45,7 @@ export const AppButton: React.FC<AppButtonProps> = ({
     <Component
       className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${className}`}
       disabled={disabled || loading}
-      {...props as any}
+      {...props}
     >
       {loading ? (
         <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
