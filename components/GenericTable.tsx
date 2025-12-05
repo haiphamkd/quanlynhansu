@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 interface Column<T> {
@@ -14,6 +13,7 @@ interface GenericTableProps<T> {
   actions?: (item: T) => React.ReactNode;
 }
 
+// Updated constraint to allow id to be string or number
 function GenericTable<T extends { id: string | number }>({ data, columns, onRowClick, actions }: GenericTableProps<T>) {
   return (
     <div className="overflow-x-auto bg-white rounded-lg shadow border border-gray-200">
