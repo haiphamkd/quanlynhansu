@@ -1,0 +1,8 @@
+{
+  "name": "PharmaHR",
+  "description": "Hệ thống quản lý nhân lực, chấm công, tài chính và báo cáo chuyên biệt cho Khoa Dược bệnh viện. Tích hợp AI để phân tích dữ liệu.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
