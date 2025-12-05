@@ -46,7 +46,7 @@ const ProposalManager: React.FC = () => {
     setIsModalOpen(false);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = (id: string | number) => {
     if(confirm("Xóa tờ trình này?")) {
       // Logic delete would go here
       alert("Đã xóa (Mô phỏng)");
