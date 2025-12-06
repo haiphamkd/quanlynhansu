@@ -118,7 +118,7 @@ export interface AnnualEvaluation {
   rank: EvaluationRank;
   
   // Rewards
-  rewardProposal: 'Sở Y tế' | 'Bệnh viện' | 'Không' | string;
+  rewardProposal: 'Không' | 'Bệnh viện' | 'Sở Y tế' | 'UBND' | 'Chính phủ' | string;
   rewardTitle: 'Chiến sĩ thi đua' | 'Giấy khen' | 'Lao động tiên tiến' | 'Không' | string;
   
   attachmentUrl?: string; // File minh chứng/báo cáo

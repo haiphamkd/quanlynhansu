@@ -324,8 +324,10 @@ const EvaluationManager: React.FC = () => {
                      className="block w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white"
                   >
                     <option value="Không">Không</option>
-                    <option value="Sở Y tế">Sở Y tế</option>
                     <option value="Bệnh viện">Bệnh viện</option>
+                    <option value="Sở Y tế">Sở Y tế</option>
+                    <option value="UBND">UBND</option>
+                    <option value="Chính phủ">Chính phủ</option>
                   </select>
                </div>
                <div>
