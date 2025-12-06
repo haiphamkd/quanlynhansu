@@ -96,6 +96,7 @@ const EvaluationManager: React.FC = () => {
     rank: EvaluationRank.GOOD, // Updated default: Hoàn thành tốt nhiệm vụ
     rewardProposal: 'Không',
     rewardTitle: 'Không', // Updated default: Không
+    unionReward: 'Không',
     notes: '',
     attachmentUrl: ''
   };
@@ -125,6 +126,7 @@ const EvaluationManager: React.FC = () => {
         rank: item.rank,
         rewardProposal: item.rewardProposal,
         rewardTitle: item.rewardTitle,
+        unionReward: item.unionReward || 'Không',
         notes: item.notes || '',
         attachmentUrl: item.attachmentUrl || ''
     });
@@ -198,6 +200,7 @@ const EvaluationManager: React.FC = () => {
       rank: formData.rank,
       rewardProposal: formData.rewardProposal,
       rewardTitle: formData.rewardTitle,
+      unionReward: formData.unionReward,
       notes: formData.notes,
       attachmentUrl: formData.attachmentUrl
     };
@@ -315,7 +318,7 @@ const EvaluationManager: React.FC = () => {
                </select>
             </div>
 
-            <div className="grid grid-cols-1 gap-3">
+            <div className="space-y-3">
                <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">Đề nghị khen thưởng</label>
                   <select 
@@ -341,6 +344,18 @@ const EvaluationManager: React.FC = () => {
                     <option value="Lao động tiên tiến">Lao động tiên tiến</option>
                     <option value="Giấy khen">Giấy khen</option>
                     <option value="Chiến sĩ thi đua">Chiến sĩ thi đua</option>
+                  </select>
+               </div>
+               <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Khen thưởng Công đoàn</label>
+                  <select 
+                     value={formData.unionReward || 'Không'}
+                     onChange={e => setFormData({...formData, unionReward: e.target.value})}
+                     className="block w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white"
+                  >
+                    <option value="Không">Không</option>
+                    <option value="Công đoàn cơ sở">Công đoàn cơ sở</option>
+                    <option value="Công đoàn ngành (tỉnh)">Công đoàn ngành (tỉnh)</option>
                   </select>
                </div>
             </div>
@@ -431,7 +446,8 @@ const EvaluationManager: React.FC = () => {
                 <div className="text-xs">
                    {item.rewardProposal !== 'Không' && <div className="text-gray-600">Đề nghị: {item.rewardProposal}</div>}
                    {item.rewardTitle !== 'Không' && <div className="font-bold text-teal-700">{item.rewardTitle}</div>}
-                   {item.rewardProposal === 'Không' && item.rewardTitle === 'Không' && <span className="text-gray-400">-</span>}
+                   {item.unionReward && item.unionReward !== 'Không' && <div className="font-bold text-blue-700">CĐ: {item.unionReward}</div>}
+                   {item.rewardProposal === 'Không' && item.rewardTitle === 'Không' && (!item.unionReward || item.unionReward === 'Không') && <span className="text-gray-400">-</span>}
                 </div>
               )},
               { 

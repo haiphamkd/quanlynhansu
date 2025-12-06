@@ -353,7 +353,7 @@ class DataService {
         reason: item.ly_do,
         reporter: item.nguoi_bao_cao,
         reporterId: item.ma_nguoi_bao_cao,
-        dinh_kem: item.dinh_kem
+        attachmentUrls: item.dinh_kem ? item.dinh_kem.split(';').filter(Boolean) : []
     }));
   }
 
@@ -366,9 +366,9 @@ class DataService {
         ly_do: report.reason,
         nguoi_bao_cao: report.reporter,
         ma_nguoi_bao_cao: report.reporterId,
-        dinh_kem: report.attachmentUrls
+        dinh_kem: report.attachmentUrls ? report.attachmentUrls.join(';') : null
     };
-    if (typeof report.id === 'number') {
+    if (typeof report.id === 'number' || (typeof report.id === 'string' && !report.id.startsWith('R-'))) {
         await supabase.from('bao_cao_don').update(dbItem).eq('id', report.id);
     } else {
         await supabase.from('bao_cao_don').insert(dbItem);
@@ -402,6 +402,7 @@ class DataService {
         rank: item.xep_loai,
         rewardProposal: item.de_nghi_khen,
         rewardTitle: item.danh_hieu,
+        unionReward: item.khen_thuong_cong_doan,
         notes: item.ghi_chu,
         attachmentUrl: item.dinh_kem
     }));
@@ -421,6 +422,7 @@ class DataService {
         xep_loai: evalItem.rank,
         de_nghi_khen: evalItem.rewardProposal,
         danh_hieu: evalItem.rewardTitle,
+        khen_thuong_cong_doan: evalItem.unionReward,
         ghi_chu: evalItem.notes,
         dinh_kem: evalItem.attachmentUrl
     };
@@ -428,8 +430,11 @@ class DataService {
     const { error } = await supabase.from('danh_gia').insert(dbItem);
     
     if (error) {
-       // Fallback logic for missing column 'dinh_kem'
-       if (error.message.includes('dinh_kem')) {
+       // Fallback logic for missing columns
+       if (error.message.includes('khen_thuong_cong_doan')) {
+          const { khen_thuong_cong_doan, ...retryPayload } = dbItem;
+          await supabase.from('danh_gia').insert(retryPayload);
+       } else if (error.message.includes('dinh_kem')) {
           const { dinh_kem, ...safePayload } = dbItem;
           await supabase.from('danh_gia').insert(safePayload);
        } else {
@@ -454,12 +459,18 @@ class DataService {
         xep_loai: evalItem.rank,
         de_nghi_khen: evalItem.rewardProposal,
         danh_hieu: evalItem.rewardTitle,
+        khen_thuong_cong_doan: evalItem.unionReward,
         ghi_chu: evalItem.notes,
         dinh_kem: evalItem.attachmentUrl
     };
     const { error } = await supabase.from('danh_gia').update(dbItem).eq('id', evalItem.id);
     
     if (error) {
+       if (error.message.includes('khen_thuong_cong_doan')) {
+          const { khen_thuong_cong_doan, ...retryPayload } = dbItem;
+          const { error: retryError } = await supabase.from('danh_gia').update(retryPayload).eq('id', evalItem.id);
+          return !retryError;
+       }
        if (error.message.includes('dinh_kem')) {
           const { dinh_kem, ...safePayload } = dbItem;
           const { error: retryError } = await supabase.from('danh_gia').update(safePayload).eq('id', evalItem.id);

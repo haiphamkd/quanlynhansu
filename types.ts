@@ -1,4 +1,5 @@
 
+
 // Enum definitions
 export enum EmployeeStatus {
   ACTIVE = "Đang làm việc",
@@ -121,6 +122,7 @@ export interface AnnualEvaluation {
   // Rewards
   rewardProposal: 'Không' | 'Bệnh viện' | 'Sở Y tế' | 'UBND' | 'Chính phủ' | string;
   rewardTitle: 'Chiến sĩ thi đua' | 'Giấy khen' | 'Lao động tiên tiến' | 'Không' | string;
+  unionReward?: 'Không' | 'Công đoàn cơ sở' | 'Công đoàn ngành (tỉnh)' | string;
   
   attachmentUrl?: string; // File minh chứng/báo cáo
   notes?: string;
