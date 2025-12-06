@@ -285,4 +285,3 @@ const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
 };
 
 export default Layout;
-    

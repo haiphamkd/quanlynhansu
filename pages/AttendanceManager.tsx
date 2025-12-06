@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Calendar, Save, History, QrCode, Scan, Clock, Lock, Sun, Moon, Search, Check, X, CheckCircle, Camera, CameraOff, Trash2 } from 'lucide-react';
 import { Html5QrcodeScanner } from "html5-qrcode";
@@ -155,16 +156,32 @@ const AttendanceManager: React.FC = () => {
   };
   
   const handleDeleteDailyRecord = async (employeeId: string, shift: 'Sáng' | 'Chiều') => {
-      if (!confirm(`Bạn có chắc muốn xóa chấm công ${shift} của nhân viên ${employeeId}?`)) return;
+      if (!confirm(`Bạn có chắc muốn xóa chấm công ${shift} của nhân viên này?`)) return;
 
-      const record = dailyRecords.find(r => r.employee.id === employeeId)?.[shift === 'Sáng' ? 'morning' : 'afternoon'];
-      
-      // If record has been saved to DB (we assume if it's "Chưa quét", it's not in DB or doesn't matter)
-      // But strictly, we try to delete from DB using (ma_nv, ngay, ca)
+      // 1. Delete from DB (in case it was already saved)
       await dataService.deleteAttendance(employeeId, selectedDate, shift);
       
-      // Reload UI to show "Chưa quét" state
-      loadAndPrepareDailyData();
+      // 2. Update Local State (Reset to empty) without reloading whole table
+      // This preserves other unsaved changes on the screen
+      setDailyRecords(prev => prev.map(rec => {
+          if (rec.employee.id === employeeId) {
+              const key = shift === 'Sáng' ? 'morning' : 'afternoon';
+              const emptyRecord: Attendance = {
+                  id: `${employeeId}-${selectedDate}-${shift}`, 
+                  employeeId: employeeId, 
+                  employeeName: rec.employee.fullName, 
+                  department: rec.employee.department,
+                  date: selectedDate, 
+                  shift: shift, 
+                  status: 'Chưa quét'
+              };
+              return {
+                  ...rec,
+                  [key]: emptyRecord
+              };
+          }
+          return rec;
+      }));
   };
 
   const handleDeleteHistory = async (item: Attendance) => {
@@ -173,9 +190,26 @@ const AttendanceManager: React.FC = () => {
       const success = await dataService.deleteAttendance(item.employeeId, item.date, item.shift);
       if (success) {
           loadHistory(); // Reload history table
-          // Also reload daily data if the deleted record was on the selected date
+          
+          // If the deleted record belongs to the currently selected date in Daily view,
+          // update the daily view state locally to reflect deletion
           if (item.date === selectedDate) {
-              loadAndPrepareDailyData();
+              setDailyRecords(prev => prev.map(rec => {
+                if (rec.employee.id === item.employeeId) {
+                    const key = item.shift === 'Sáng' ? 'morning' : 'afternoon';
+                    const emptyRecord: Attendance = {
+                        id: `${item.employeeId}-${selectedDate}-${item.shift}`, 
+                        employeeId: item.employeeId, 
+                        employeeName: rec.employee.fullName, 
+                        department: rec.employee.department,
+                        date: selectedDate, 
+                        shift: item.shift, 
+                        status: 'Chưa quét'
+                    };
+                    return { ...rec, [key]: emptyRecord };
+                }
+                return rec;
+              }));
           }
       } else {
           alert("Xóa thất bại. Vui lòng thử lại.");
@@ -363,7 +397,7 @@ const AttendanceManager: React.FC = () => {
                                <div className="flex items-center text-emerald-700 font-bold text-xs bg-emerald-50 px-3 py-1.5 rounded-md w-fit border border-emerald-100">
                                   <Clock size={14} className="mr-1.5" /> {record.morning.timeIn}
                                </div>
-                               <button onClick={() => handleDeleteDailyRecord(record.employee.id, 'Sáng')} className="text-gray-400 hover:text-red-500 p-1" title="Xóa chấm công">
+                               <button onClick={() => handleDeleteDailyRecord(record.employee.id, 'Sáng')} className="text-gray-400 hover:text-red-500 p-1 transition-colors rounded-full hover:bg-red-50" title="Xóa/Hoàn tác">
                                    <Trash2 size={14} />
                                </button>
                            </div>
@@ -396,7 +430,7 @@ const AttendanceManager: React.FC = () => {
                                <div className="flex items-center text-emerald-700 font-bold text-xs bg-emerald-50 px-3 py-1.5 rounded-md w-fit border border-emerald-100">
                                   <Clock size={14} className="mr-1.5" /> {record.afternoon.timeIn}
                                </div>
-                               <button onClick={() => handleDeleteDailyRecord(record.employee.id, 'Chiều')} className="text-gray-400 hover:text-red-500 p-1" title="Xóa chấm công">
+                               <button onClick={() => handleDeleteDailyRecord(record.employee.id, 'Chiều')} className="text-gray-400 hover:text-red-500 p-1 transition-colors rounded-full hover:bg-red-50" title="Xóa/Hoàn tác">
                                    <Trash2 size={14} />
                                </button>
                            </div>
