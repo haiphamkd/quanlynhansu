@@ -42,20 +42,36 @@ class DataService {
   async createUser(user: User): Promise<{success: boolean, error?: string}> {
     if (this.isDemoMode) return { success: true };
 
-    const { error } = await supabase.from('nguoi_dung').insert({
-        ten_dang_nhap: user.username,
-        mat_khau: user.password, // Should be '1' initially
-        vai_tro: user.role,
-        ho_ten: user.name,
-        ma_nhan_vien: user.employeeId,
-        can_doi_mat_khau: true // Force change on first login
-    });
+    try {
+        const { error } = await supabase.from('nguoi_dung').insert({
+            ten_dang_nhap: user.username,
+            mat_khau: user.password,
+            vai_tro: user.role,
+            ho_ten: user.name,
+            ma_nhan_vien: user.employeeId,
+            can_doi_mat_khau: true
+        });
 
-    if (error) {
-       if (error.code === '23505') return { success: false, error: 'Tên đăng nhập đã tồn tại' };
-       return { success: false, error: error.message };
+        if (error) {
+            // Fallback nếu cột can_doi_mat_khau chưa có
+            if (error.message.includes('can_doi_mat_khau')) {
+                 const { error: retryError } = await supabase.from('nguoi_dung').insert({
+                    ten_dang_nhap: user.username,
+                    mat_khau: user.password,
+                    vai_tro: user.role,
+                    ho_ten: user.name,
+                    ma_nhan_vien: user.employeeId
+                });
+                if (retryError) return { success: false, error: retryError.message };
+                return { success: true };
+            }
+            if (error.code === '23505') return { success: false, error: 'Tên đăng nhập đã tồn tại' };
+            return { success: false, error: error.message };
+        }
+        return { success: true };
+    } catch (e: any) {
+        return { success: false, error: e.message };
     }
-    return { success: true };
   }
 
   async changePassword(username: string, newPass: string): Promise<{success: boolean, error?: string}> {
@@ -66,7 +82,14 @@ class DataService {
       .update({ mat_khau: newPass, can_doi_mat_khau: false })
       .eq('ten_dang_nhap', username);
 
-    if (error) return { success: false, error: error.message };
+    if (error) {
+         if (error.message.includes('can_doi_mat_khau')) {
+            const { error: retryError } = await supabase.from('nguoi_dung').update({ mat_khau: newPass }).eq('ten_dang_nhap', username);
+            if (retryError) return { success: false, error: retryError.message };
+            return { success: true };
+         }
+         return { success: false, error: error.message };
+    }
     return { success: true };
   }
 
@@ -105,7 +128,6 @@ class DataService {
     return emp;
   }
 
-  // Hỗ trợ Import nhiều nhân viên
   async importEmployees(employees: Employee[]): Promise<{success: boolean, error?: string}> {
     const dbItems = employees.map(emp => this.mapEmployeeToDb(emp));
     const { error } = await supabase.from('nhan_vien').insert(dbItems);
@@ -179,7 +201,6 @@ class DataService {
         trang_thai: r.status,
         ghi_chu: r.notes
     }));
-    // Dùng upsert để cập nhật nếu đã có chấm công ngày đó
     const { error } = await supabase.from('cham_cong').upsert(dbRecords); 
     if (error) console.error("Save attendance error:", error);
     return !error;
@@ -201,7 +222,6 @@ class DataService {
   }
 
   async addFundTransaction(trans: FundTransaction): Promise<FundTransaction> {
-    // Lấy số dư cuối cùng
     const { data: lastTrans } = await supabase.from('quy_khoa').select('so_du_cuoi').order('id', { ascending: false }).limit(1).single();
     const lastBalance = lastTrans ? lastTrans.so_du_cuoi : 0;
     const newBalance = trans.type === 'Thu' ? lastBalance + trans.amount : lastBalance - trans.amount;
@@ -216,6 +236,18 @@ class DataService {
     };
     await supabase.from('quy_khoa').insert(dbItem);
     return { ...trans, balanceAfter: newBalance };
+  }
+
+  async updateFundTransaction(trans: FundTransaction): Promise<boolean> {
+    const dbItem = {
+        ngay: trans.date,
+        loai: trans.type,
+        noi_dung: trans.content,
+        nguoi_thuc_hien: trans.performer,
+        so_tien: trans.amount,
+    };
+    const { error } = await supabase.from('quy_khoa').update(dbItem).eq('id', trans.id);
+    return !error;
   }
 
   // --- 5. BÁO CÁO (Bảng: bao_cao_don) ---
@@ -244,7 +276,6 @@ class DataService {
         ma_nguoi_bao_cao: report.reporterId,
         dinh_kem: report.attachmentUrls
     };
-    // Nếu ID là số (từ DB) thì update, nếu string (mock/new) thì insert
     if (typeof report.id === 'number') {
         await supabase.from('bao_cao_don').update(dbItem).eq('id', report.id);
     } else {
@@ -298,6 +329,25 @@ class DataService {
     return evalItem;
   }
 
+  async updateEvaluation(evalItem: AnnualEvaluation): Promise<boolean> {
+    const dbItem = {
+        nam: evalItem.year,
+        ma_nv: evalItem.employeeId,
+        ho_ten: evalItem.fullName,
+        chuc_vu: evalItem.position,
+        diem_chuyen_mon: evalItem.scoreProfessional,
+        diem_thai_do: evalItem.scoreAttitude,
+        diem_ky_luat: evalItem.scoreDiscipline,
+        diem_trung_binh: evalItem.averageScore,
+        xep_loai: evalItem.rank,
+        de_nghi_khen: evalItem.rewardProposal,
+        danh_hieu: evalItem.rewardTitle,
+        ghi_chu: evalItem.notes
+    };
+    const { error } = await supabase.from('danh_gia').update(dbItem).eq('id', evalItem.id);
+    return !error;
+  }
+
   async deleteEvaluation(id: string): Promise<boolean> {
     const { error } = await supabase.from('danh_gia').delete().eq('id', id);
     return !error;
@@ -311,6 +361,7 @@ class DataService {
         id: item.id,
         date: item.ngay,
         title: item.tieu_de,
+        proposalNumber: item.so_to_trinh, // Map new field
         content: item.noi_dung,
         submitter: item.nguoi_trinh,
         fileUrl: item.file_url,
@@ -322,6 +373,7 @@ class DataService {
     const dbItem = {
         ngay: prop.date,
         tieu_de: prop.title,
+        so_to_trinh: prop.proposalNumber,
         noi_dung: prop.content,
         nguoi_trinh: prop.submitter,
         file_url: prop.fileUrl,
@@ -329,6 +381,20 @@ class DataService {
     };
     await supabase.from('to_trinh').insert(dbItem);
     return prop;
+  }
+
+  async updateProposal(prop: Proposal): Promise<boolean> {
+    const dbItem = {
+        ngay: prop.date,
+        tieu_de: prop.title,
+        so_to_trinh: prop.proposalNumber || '', // Explicitly ensure it is sent, avoid undefined
+        noi_dung: prop.content,
+        nguoi_trinh: prop.submitter,
+        file_url: prop.fileUrl,
+        trang_thai: prop.status
+    };
+    const { error } = await supabase.from('to_trinh').update(dbItem).eq('id', prop.id);
+    return !error;
   }
 
   // --- 8. LỊCH TRỰC (Bảng: lich_truc) ---
@@ -372,7 +438,7 @@ class DataService {
   async getDropdowns(): Promise<TempData[]> {
     const { data } = await supabase.from('danh_muc').select('*');
     if (!data || data.length === 0) {
-        // Fallback data nếu bảng rỗng
+        // Fallback data
         return [
             { type: 'TrinhDo', value: 'Dược sĩ Đại học' },
             { type: 'TrinhDo', value: 'Dược sĩ CKI' },

@@ -81,12 +81,14 @@ const ReportManager: React.FC = () => {
       reporterId: isEditing ? formData.reporterId : currentUser.username
     };
 
-    await dataService.addReport(newReport); // Mock service handles update logic simply by ID overwrite if simplified
+    await dataService.addReport(newReport); 
     loadReports();
     alert('Đã lưu báo cáo!');
     setFormData(initialFormState);
     setIsEditing(false);
   };
+
+  const totalCalculated = (formData.totalIssued || 0) + (formData.notReceived || 0);
 
   return (
     <div className="space-y-6">
@@ -111,14 +113,20 @@ const ReportManager: React.FC = () => {
                 className="mt-1 block w-full border border-gray-300 rounded-md px-3 h-10 bg-white shadow-sm" 
               />
             </div>
+            
+            <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 text-center mb-2">
+                <span className="text-xs text-gray-500 uppercase font-semibold">Tổng đơn thuốc</span>
+                <div className="text-2xl font-bold text-gray-800">{totalCalculated}</div>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700">Số đơn đã cấp</label>
+                <label className="block text-sm font-medium text-gray-700">Đã cấp</label>
                 <input 
                   type="number" required min="0"
                   value={formData.totalIssued}
                   onChange={e => setFormData({...formData, totalIssued: Number(e.target.value)})}
-                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 h-10 bg-white shadow-sm" 
+                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 h-10 bg-white shadow-sm font-semibold text-blue-700" 
                 />
               </div>
               <div>
@@ -127,7 +135,7 @@ const ReportManager: React.FC = () => {
                   type="number" required min="0"
                   value={formData.notReceived}
                   onChange={e => setFormData({...formData, notReceived: Number(e.target.value)})}
-                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 h-10 bg-white shadow-sm" 
+                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 h-10 bg-white shadow-sm font-semibold text-red-600" 
                 />
               </div>
             </div>
@@ -184,6 +192,7 @@ const ReportManager: React.FC = () => {
              data={[...reports].reverse().slice(0, 10)}
              columns={[
                { header: 'Ngày', accessor: (item) => formatDateVN(item.date) },
+               { header: 'Tổng', accessor: (item) => <span className="font-bold">{(item.totalIssued || 0) + (item.notReceived || 0)}</span>, className: 'text-center bg-gray-50' },
                { header: 'Đã cấp', accessor: 'totalIssued', className: 'text-blue-600 font-medium text-center' },
                { header: 'Chưa nhận', accessor: 'notReceived', className: 'text-red-600 font-medium text-center' },
                { header: 'Lý do', accessor: 'reason' },

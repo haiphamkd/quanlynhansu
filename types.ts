@@ -104,6 +104,7 @@ export interface Proposal {
   id: string;
   date: string;
   title: string; 
+  proposalNumber?: string; // Số tờ trình
   content: string;
   submitter: string; 
   fileUrl?: string; // Link drive or Base64
