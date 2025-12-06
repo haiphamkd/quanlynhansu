@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Pencil, Trash2, Search, User, X, Upload, CheckCircle, RotateCcw, Key, Download, Eye, QrCode, Shield, Lock, MapPin, CreditCard, Mail, Phone, Filter } from 'lucide-react';
 import GenericTable from '../components/GenericTable';
 import { AppButton } from '../components/AppButton';
-import { Employee, EmployeeStatus, User as AppUser, DEPARTMENTS, Category } from '../types';
+import { Employee, EmployeeStatus, User as AppUser, DEPARTMENTS, Category, UserRole } from '../types';
 import { dataService } from '../services/dataService';
 import { formatDateVN, generateUsername } from '../utils/helpers';
 
@@ -19,12 +19,16 @@ const EmployeeManager: React.FC = () => {
   const [isViewMode, setIsViewMode] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [activeTab, setActiveTab] = useState<'personal' | 'work' | 'account'>('personal');
+  
+  // Account creation state
+  const [selectedRole, setSelectedRole] = useState<UserRole>('staff');
 
   // Current User
   const getCurrentUser = () => {
     try { return JSON.parse(localStorage.getItem('pharmahr_user') || '{}'); } catch { return { role: 'staff' }; }
   };
   const currentUser = getCurrentUser();
+  const isAdminOrOperator = ['admin', 'operator'].includes(currentUser.role);
 
   const initialFormState: Employee = {
     id: '', fullName: '', department: 'Khoa Dược', dob: '', gender: 'Nam', position: 'Dược sĩ', qualification: '',
@@ -41,7 +45,8 @@ const EmployeeManager: React.FC = () => {
 
   const loadData = async () => {
     setLoading(true);
-    const deptFilter = currentUser.role === 'admin' ? 'All' : currentUser.department;
+    // Admin and Operator can see All, others see their department
+    const deptFilter = isAdminOrOperator ? 'All' : currentUser.department;
     
     try {
         const [empData, catData, userData] = await Promise.all([
@@ -70,9 +75,10 @@ const EmployeeManager: React.FC = () => {
     setEditingEmployee(null);
     setIsViewMode(false);
     setActiveTab('personal');
+    setSelectedRole('staff');
     setFormData({
       ...initialFormState,
-      department: currentUser.role === 'admin' ? 'Khoa Dược' : (currentUser.department || 'Khoa Dược'),
+      department: isAdminOrOperator ? 'Khoa Dược' : (currentUser.department || 'Khoa Dược'),
       id: getNextId(),
       dob: '1990-01-01',
       joinDate: new Date().toISOString().split('T')[0],
@@ -105,13 +111,15 @@ const EmployeeManager: React.FC = () => {
   // --- ACCOUNT LOGIC ---
   const handleCreateAccount = async () => {
     if(!editingEmployee) return;
-    if (!confirm(`Tạo tài khoản cho nhân viên ${editingEmployee.fullName}? \nTài khoản sẽ là: ${generateUsername(editingEmployee.fullName)}\nMật khẩu mặc định: 1`)) return;
+    const generatedUsername = generateUsername(editingEmployee.fullName);
+    
+    if (!confirm(`Tạo tài khoản cho nhân viên ${editingEmployee.fullName}? \nUsername: ${generatedUsername}\nVai trò: ${selectedRole}\nMật khẩu mặc định: 1`)) return;
 
     const newUser: AppUser = {
-      username: generateUsername(editingEmployee.fullName),
+      username: generatedUsername,
       password: '1',
       name: editingEmployee.fullName,
-      role: 'staff',
+      role: selectedRole,
       department: editingEmployee.department,
       employeeId: editingEmployee.id,
       mustChangePassword: true
@@ -167,6 +175,21 @@ const EmployeeManager: React.FC = () => {
         alert("Có lỗi xảy ra khi lưu dữ liệu. Vui lòng thử lại.");
         console.error(error);
     }
+  };
+
+  // Helper to generate CLEAN QR data string (Pipe separated or Newline)
+  // Format: ID\nFullName\nDOB\nDepartment\nPosition\nPhone
+  const getQrData = (emp: Employee) => {
+    const cleanData = [
+      emp.id,
+      emp.fullName,
+      formatDateVN(emp.dob),
+      emp.department || 'N/A',
+      emp.position || 'N/A',
+      emp.phone || 'N/A'
+    ].join('\n');
+    
+    return encodeURIComponent(cleanData);
   };
 
   const filteredEmployees = employees.filter(e => 
@@ -225,7 +248,6 @@ const EmployeeManager: React.FC = () => {
     },
     { 
       header: 'Khoa Phòng', 
-      // Ensure we access the property directly and provide a fallback
       accessor: (item: Employee) => (
         <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-blue-50 text-blue-700">
            {item.department || 'Chưa cập nhật'}
@@ -264,9 +286,11 @@ const EmployeeManager: React.FC = () => {
           <AppButton variant="secondary" size="md" icon={Download} onClick={() => alert("Coming soon")}>
              Xuất Excel
           </AppButton>
-          <AppButton variant="primary" size="md" icon={Plus} onClick={handleAddClick} className="shadow-lg shadow-teal-200">
-            Thêm nhân viên
-          </AppButton>
+          {(isAdminOrOperator || currentUser.role === 'manager') && (
+            <AppButton variant="primary" size="md" icon={Plus} onClick={handleAddClick} className="shadow-lg shadow-teal-200">
+                Thêm nhân viên
+            </AppButton>
+          )}
         </div>
       </div>
 
@@ -319,12 +343,12 @@ const EmployeeManager: React.FC = () => {
                   </div>
                </div>
                <div className="flex items-center space-x-3">
-                   {isViewMode && (currentUser.role === 'admin' || currentUser.role === 'manager') && (
+                   {isViewMode && (isAdminOrOperator || currentUser.role === 'manager') && (
                       <>
                         <button onClick={handleSwitchToEdit} className="flex items-center px-4 py-2 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors font-medium text-sm">
                             <Pencil size={16} className="mr-2"/> Chỉnh sửa
                         </button>
-                        {currentUser.role === 'admin' && (
+                        {isAdminOrOperator && (
                            <button onClick={handleDeleteClick} className="flex items-center px-4 py-2 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors font-medium text-sm">
                                 <Trash2 size={16} className="mr-2"/> Xóa
                            </button>
@@ -392,12 +416,12 @@ const EmployeeManager: React.FC = () => {
                             {(isViewMode || editingEmployee) && (
                                <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm text-center w-full">
                                   <img 
-                                    src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(JSON.stringify({id: formData.id, name: formData.fullName, dept: formData.department}))}`} 
+                                    src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${getQrData(formData)}`} 
                                     alt="QR" 
                                     className="w-32 h-32 mx-auto mb-3"
                                   />
                                   <div className="text-xs text-gray-500 flex items-center justify-center font-mono bg-gray-100 rounded-lg py-1.5 px-3">
-                                     <QrCode size={12} className="mr-1.5"/> {formData.id}
+                                     <QrCode size={12} className="mr-1.5"/> Mã QR
                                   </div>
                                </div>
                             )}
@@ -472,7 +496,7 @@ const EmployeeManager: React.FC = () => {
                             <div>
                                <label className={LABEL_CLASS}>Khoa / Phòng <span className="text-red-500">*</span></label>
                                <select 
-                                 disabled={isViewMode || currentUser.role !== 'admin'} 
+                                 disabled={isViewMode || !isAdminOrOperator} 
                                  value={formData.department} 
                                  onChange={e => setFormData({...formData, department: e.target.value})} 
                                  className={INPUT_CLASS}
@@ -573,7 +597,7 @@ const EmployeeManager: React.FC = () => {
                                 </div>
                             </div>
                             
-                            {currentUser.role === 'admin' && (
+                            {isAdminOrOperator && (
                                <div className="pt-4 border-t border-gray-200">
                                   <p className="text-sm text-gray-500 mb-3">Người dùng quên mật khẩu?</p>
                                   <AppButton variant="warning" icon={RotateCcw} onClick={handleResetPassword} className="w-full justify-center">
@@ -583,13 +607,29 @@ const EmployeeManager: React.FC = () => {
                             )}
                          </div>
                       ) : (
-                         <div className="text-center space-y-6 max-w-sm">
+                         <div className="text-center space-y-6 max-w-sm w-full">
                             <div>
                                 <h4 className="text-2xl font-bold text-gray-900 mb-2">Chưa có tài khoản</h4>
                                 <p className="text-gray-500 text-sm leading-relaxed">
                                    Nhân viên này chưa có tài khoản đăng nhập. Tạo tài khoản để họ có thể truy cập hệ thống.
                                 </p>
                             </div>
+
+                            {/* Role Selection */}
+                            <div className="text-left bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                               <label className={LABEL_CLASS}>Chọn Vai Trò (Phân quyền)</label>
+                               <select 
+                                 value={selectedRole} 
+                                 onChange={(e) => setSelectedRole(e.target.value as UserRole)}
+                                 className={INPUT_CLASS}
+                               >
+                                 <option value="staff">Nhân viên (Staff) - Xem cá nhân</option>
+                                 <option value="manager">Trưởng khoa (Manager) - Quản lý Khoa</option>
+                                 {isAdminOrOperator && <option value="operator">Người điều hành (Operator) - Quản lý chung</option>}
+                                 {currentUser.role === 'admin' && <option value="admin">Quản trị viên (Admin) - Toàn quyền</option>}
+                               </select>
+                            </div>
+
                             <AppButton variant="primary" size="lg" icon={Key} onClick={handleCreateAccount} className="w-full justify-center shadow-lg shadow-teal-200">
                                Cấp tài khoản ngay
                             </AppButton>

@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 interface Column<T> {
@@ -27,21 +26,21 @@ function GenericTable<T extends { id: string | number }>({ data, columns, onRowC
 
   return (
     <div className="overflow-hidden bg-white rounded-xl shadow-sm border border-gray-200">
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
+      <div className="overflow-x-auto max-h-[70vh]">
+        <table className="min-w-full divide-y divide-gray-200 relative">
           <thead>
             <tr className="bg-gray-50">
               {columns.map((col, idx) => (
                 <th
                   key={idx}
                   scope="col"
-                  className={`px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap ${col.className || ''}`}
+                  className={`px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap sticky top-0 z-10 bg-gray-50 shadow-sm ${col.className || ''}`}
                 >
                   {col.header}
                 </th>
               ))}
               {actions && (
-                <th scope="col" className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap sticky right-0 bg-gray-50 z-10 shadow-l">
+                <th scope="col" className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap sticky top-0 right-0 z-20 bg-gray-50 shadow-sm">
                   Thao tác
                 </th>
               )}
@@ -61,7 +60,7 @@ function GenericTable<T extends { id: string | number }>({ data, columns, onRowC
                     </td>
                   ))}
                   {actions && (
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium sticky right-0 bg-white group-hover:bg-teal-50/20 shadow-l-sm">
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium sticky right-0 bg-white group-hover:bg-teal-50/20 shadow-l-sm z-0">
                       {actions(item)}
                     </td>
                   )}

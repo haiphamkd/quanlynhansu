@@ -14,6 +14,7 @@ import ProposalManager from "./pages/ProposalManager";
 import ShiftManager from "./pages/ShiftManager";
 import AiAssistant from "./pages/AiAssistant";
 import CategoryManager from "./pages/CategoryManager";
+import AccountManager from "./pages/AccountManager";
 import { User } from "./types";
 
 // Error Boundary with proper types
@@ -95,6 +96,7 @@ const App = () => {
           <Route path="/reports" element={<ReportManager />} />
           <Route path="/evaluation" element={<EvaluationManager />} />
           <Route path="/proposals" element={<ProposalManager />} />
+          <Route path="/accounts" element={<AccountManager />} />
           <Route path="/categories" element={<CategoryManager />} />
           <Route path="/ai-assistant" element={<AiAssistant />} />
           <Route path="*" element={<Navigate to="/" replace />} />

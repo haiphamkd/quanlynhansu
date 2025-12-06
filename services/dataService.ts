@@ -80,16 +80,37 @@ class DataService {
     }
   }
 
+  async updateUser(user: User): Promise<{success: boolean, error?: string}> {
+    const payload = {
+        vai_tro: user.role,
+        ho_ten: user.name,
+        khoa_phong: user.department,
+        ma_nhan_vien: user.employeeId
+    };
+    
+    // Note: We generally don't update username/password here
+    const { error } = await supabase.from('nguoi_dung').update(payload).eq('ten_dang_nhap', user.username);
+    if (error) return { success: false, error: error.message };
+    return { success: true };
+  }
+
+  async deleteUser(username: string): Promise<{success: boolean, error?: string}> {
+      const { error } = await supabase.from('nguoi_dung').delete().eq('ten_dang_nhap', username);
+      if (error) return { success: false, error: error.message };
+      return { success: true };
+  }
+
   // Get simple list of users to check existence
   async getUsers(): Promise<User[]> {
-    const { data } = await supabase.from('nguoi_dung').select('ten_dang_nhap, ma_nhan_vien, ho_ten, vai_tro, khoa_phong');
+    const { data } = await supabase.from('nguoi_dung').select('ten_dang_nhap, ma_nhan_vien, ho_ten, vai_tro, khoa_phong, can_doi_mat_khau');
     if (!data) return [];
     return data.map((u: any) => ({
         username: u.ten_dang_nhap,
         name: u.ho_ten,
         role: u.vai_tro,
         employeeId: u.ma_nhan_vien,
-        department: u.khoa_phong
+        department: u.khoa_phong,
+        mustChangePassword: u.can_doi_mat_khau
     }));
   }
 
@@ -141,8 +162,8 @@ class DataService {
       department: item.khoa_phong,
       dob: item.ngay_sinh,
       gender: item.gioi_tinh,
-      chuc_vu: item.chuc_vu,
-      trinh_do: item.trinh_do,
+      position: item.chuc_vu,
+      qualification: item.trinh_do,
       phone: item.sdt,
       email: item.email,
       contractDate: item.ngay_hop_dong,
@@ -236,8 +257,6 @@ class DataService {
         ghi_chu: r.notes
     }));
 
-    // Use upsert with onConflict to prevent duplicates for the same employee, date, and shift.
-    // This requires a UNIQUE constraint or PRIMARY KEY on (ma_nv, ngay, ca_truc) in your Supabase table.
     const { error } = await supabase.from('cham_cong').upsert(dbRecords);
     
     if (error) {
@@ -245,6 +264,15 @@ class DataService {
       return { success: false, error: error.message };
     }
     return { success: true };
+  }
+
+  async deleteAttendance(employeeId: string, date: string, shift: string): Promise<boolean> {
+    const { error } = await supabase.from('cham_cong')
+      .delete()
+      .eq('ma_nv', employeeId)
+      .eq('ngay', date)
+      .eq('ca_truc', shift);
+    return !error;
   }
 
   // --- 4. QUỸ KHOA ---

@@ -5,14 +5,17 @@ import { Category } from '../types';
 import { dataService } from '../services/dataService';
 import { AppButton } from '../components/AppButton';
 import GenericTable from '../components/GenericTable';
+import { useNavigate } from 'react-router-dom';
 
 const CategoryManager: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false); // Trạng thái xử lý khi lưu
+  const [submitting, setSubmitting] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCat, setEditingCat] = useState<Category | null>(null);
   const [activeTab, setActiveTab] = useState('ChucVu');
+
+  const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
     type: 'ChucVu',
@@ -30,6 +33,18 @@ const CategoryManager: React.FC = () => {
   ];
 
   useEffect(() => {
+    // Permission check
+    try {
+        const user = JSON.parse(localStorage.getItem('pharmahr_user') || '{}');
+        if (!['admin', 'operator'].includes(user.role)) {
+            alert("Bạn không có quyền truy cập trang này");
+            navigate('/');
+            return;
+        }
+    } catch {
+        navigate('/');
+        return;
+    }
     loadData();
   }, []);
 

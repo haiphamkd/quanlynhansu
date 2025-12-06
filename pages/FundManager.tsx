@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Wallet, TrendingUp, TrendingDown, Plus, Filter, Save, X, Pencil, Search, Building, Trash2 } from 'lucide-react';
 import GenericTable from '../components/GenericTable';
@@ -31,6 +32,8 @@ const FundManager: React.FC = () => {
      try { return JSON.parse(localStorage.getItem('pharmahr_user') || '{}'); } catch { return { name: '', role: 'staff' }; }
   };
   const currentUser = getCurrentUser();
+  const canEdit = ['admin', 'operator', 'manager'].includes(currentUser.role);
+  const isAdminOrOperator = ['admin', 'operator'].includes(currentUser.role);
 
   useEffect(() => { loadFunds(); }, []);
   
@@ -41,7 +44,8 @@ const FundManager: React.FC = () => {
   }, [funds, dateRange]);
 
   const loadFunds = async () => { 
-      const deptFilter = currentUser.role === 'admin' ? 'All' : currentUser.department;
+      // Admin and Operator see All, Manager sees their Dept
+      const deptFilter = isAdminOrOperator ? 'All' : currentUser.department;
       const data = await dataService.getFunds(deptFilter);
       setFunds(data); 
   };
@@ -198,6 +202,7 @@ const FundManager: React.FC = () => {
            )}
         </div>
         
+        {canEdit && (
         <div className="flex items-center gap-2">
             <div className="flex items-center bg-gray-100 rounded-lg p-1 border border-gray-200">
                 <button 
@@ -225,6 +230,7 @@ const FundManager: React.FC = () => {
                Thêm giao dịch
             </AppButton>
         </div>
+        )}
       </div>
 
       <GenericTable 
@@ -254,7 +260,7 @@ const FundManager: React.FC = () => {
             className: 'text-right w-32 hidden md:table-cell'
           },
         ]}
-        actions={(item) => (
+        actions={canEdit ? (item) => (
             <div className="flex justify-end space-x-1">
                 <button onClick={() => handleEditClick(item)} className="p-1.5 text-gray-400 hover:text-teal-600 bg-gray-50 hover:bg-teal-50 rounded-md transition-colors">
                     <Pencil size={16} />
@@ -263,7 +269,7 @@ const FundManager: React.FC = () => {
                     <Trash2 size={16} />
                 </button>
             </div>
-        )}
+        ) : undefined}
       />
 
        {/* Modal */}

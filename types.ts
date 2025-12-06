@@ -1,3 +1,4 @@
+
 // Enum definitions
 export enum EmployeeStatus {
   ACTIVE = "Đang làm việc",
@@ -136,7 +137,7 @@ export interface Proposal {
   notes?: string;
 }
 
-export type UserRole = 'admin' | 'staff' | 'manager';
+export type UserRole = 'admin' | 'operator' | 'manager' | 'staff';
 
 export interface MenuItem {
   id: string;
