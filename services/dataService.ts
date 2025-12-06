@@ -1,3 +1,4 @@
+
 import { supabase } from './supabaseClient';
 import { Employee, FundTransaction, PrescriptionReport, Attendance, AnnualEvaluation, Proposal, User, Shift, TempData } from '../types';
 
@@ -7,7 +8,7 @@ class DataService {
   setDemoMode(enabled: boolean) { this.isDemoMode = enabled; }
   isDemo() { return this.isDemoMode; }
 
-  // --- 1. ĐĂNG NHẬP (Bảng: nguoi_dung) ---
+  // --- 1. ĐĂNG NHẬP & NGƯỜI DÙNG (Bảng: nguoi_dung) ---
   async login(username: string, password: string): Promise<{success: boolean, user?: User, error?: string}> {
     if (this.isDemoMode) return { success: true, user: { username: 'demo', role: 'admin', name: 'Demo Admin' } };
 
@@ -27,14 +28,46 @@ class DataService {
         success: true, 
         user: { 
           username: data.ten_dang_nhap, 
-          role: data.vai_tro as 'admin' | 'staff', 
+          role: data.vai_tro as 'admin' | 'staff' | 'manager', 
           name: data.ho_ten,
-          employeeId: data.ma_nhan_vien
+          employeeId: data.ma_nhan_vien,
+          mustChangePassword: data.can_doi_mat_khau
         } 
       };
     } catch (e: any) {
       return { success: false, error: 'Lỗi kết nối CSDL Supabase: ' + e.message };
     }
+  }
+
+  async createUser(user: User): Promise<{success: boolean, error?: string}> {
+    if (this.isDemoMode) return { success: true };
+
+    const { error } = await supabase.from('nguoi_dung').insert({
+        ten_dang_nhap: user.username,
+        mat_khau: user.password, // Should be '1' initially
+        vai_tro: user.role,
+        ho_ten: user.name,
+        ma_nhan_vien: user.employeeId,
+        can_doi_mat_khau: true // Force change on first login
+    });
+
+    if (error) {
+       if (error.code === '23505') return { success: false, error: 'Tên đăng nhập đã tồn tại' };
+       return { success: false, error: error.message };
+    }
+    return { success: true };
+  }
+
+  async changePassword(username: string, newPass: string): Promise<{success: boolean, error?: string}> {
+    if (this.isDemoMode) return { success: true };
+
+    const { error } = await supabase
+      .from('nguoi_dung')
+      .update({ mat_khau: newPass, can_doi_mat_khau: false })
+      .eq('ten_dang_nhap', username);
+
+    if (error) return { success: false, error: error.message };
+    return { success: true };
   }
 
   // --- 2. NHÂN VIÊN (Bảng: nhan_vien) ---
@@ -197,7 +230,7 @@ class DataService {
         reason: item.ly_do,
         reporter: item.nguoi_bao_cao,
         reporterId: item.ma_nguoi_bao_cao,
-        attachmentUrls: item.dinh_kem
+        dinh_kem: item.dinh_kem
     }));
   }
 

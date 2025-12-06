@@ -139,11 +139,11 @@ const FundManager: React.FC = () => {
               <div className="grid grid-cols-2 gap-4">
                  <div>
                    <label className="block text-xs font-medium text-gray-500 mb-1">Ngày</label>
-                   <input type="date" required value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="block w-full border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500" />
+                   <input type="date" required value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="block w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 bg-white shadow-sm" />
                  </div>
                  <div>
                    <label className="block text-xs font-medium text-gray-500 mb-1">Loại</label>
-                   <select value={formData.type} onChange={e => setFormData({...formData, type: e.target.value as TransactionType})} className="block w-full border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500">
+                   <select value={formData.type} onChange={e => setFormData({...formData, type: e.target.value as TransactionType})} className="block w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 bg-white shadow-sm">
                      <option value={TransactionType.INCOME}>Thu</option>
                      <option value={TransactionType.EXPENSE}>Chi</option>
                    </select>
@@ -151,16 +151,16 @@ const FundManager: React.FC = () => {
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-500 mb-1">Số tiền (VNĐ)</label>
-                <input type="text" required value={formData.amount} onChange={e => setFormData({...formData, amount: formatNumberInput(e.target.value)})} className="block w-full border-gray-200 rounded-lg px-3 py-2 text-right font-bold text-gray-800 focus:ring-2 focus:ring-teal-500 text-lg" placeholder="0" />
+                <input type="text" required value={formData.amount} onChange={e => setFormData({...formData, amount: formatNumberInput(e.target.value)})} className="block w-full border border-gray-300 rounded-lg px-3 py-2 text-right font-bold text-gray-800 focus:ring-2 focus:ring-teal-500 text-lg bg-white shadow-sm" placeholder="0" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-500 mb-1">Nội dung</label>
-                <input type="text" required list="contents" value={formData.content} onChange={e => setFormData({...formData, content: e.target.value})} className="block w-full border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500" placeholder="Nhập nội dung..." />
+                <input type="text" required list="contents" value={formData.content} onChange={e => setFormData({...formData, content: e.target.value})} className="block w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 bg-white shadow-sm" placeholder="Nhập nội dung..." />
                 <datalist id="contents">{historyContents.map((c, i) => <option key={i} value={c} />)}</datalist>
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-500 mb-1">Người thực hiện</label>
-                <input type="text" required value={formData.performer} onChange={e => setFormData({...formData, performer: e.target.value})} className="block w-full border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500" />
+                <input type="text" required value={formData.performer} onChange={e => setFormData({...formData, performer: e.target.value})} className="block w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 bg-white shadow-sm" />
               </div>
               <div className="pt-4">
                 <AppButton type="submit" variant="primary" icon={Save} className="w-full">

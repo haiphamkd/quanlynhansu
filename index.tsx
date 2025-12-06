@@ -11,6 +11,7 @@ import ReportManager from "./pages/ReportManager";
 import EvaluationManager from "./pages/EvaluationManager";
 import ProposalManager from "./pages/ProposalManager";
 import ShiftManager from "./pages/ShiftManager";
+import AiAssistant from "./pages/AiAssistant";
 import { User } from "./types";
 
 // Error Boundary with proper types
@@ -24,8 +25,6 @@ interface ErrorBoundaryState {
 }
 
 class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  public state: ErrorBoundaryState;
-
   constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = { hasError: false, error: null };
@@ -89,6 +88,7 @@ const App = () => {
           <Route path="/reports" element={<ReportManager />} />
           <Route path="/evaluation" element={<EvaluationManager />} />
           <Route path="/proposals" element={<ProposalManager />} />
+          <Route path="/ai-assistant" element={<AiAssistant />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Layout>

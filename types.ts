@@ -121,9 +121,10 @@ export interface MenuItem {
 export interface User {
   username: string;
   password?: string; // Only for backend logic
-  role: 'admin' | 'staff';
+  role: 'admin' | 'staff' | 'manager'; // Added manager role
   name: string;
   employeeId?: string; // Link to employee record
+  mustChangePassword?: boolean; // Force change password on first login
 }
 
 // New Types

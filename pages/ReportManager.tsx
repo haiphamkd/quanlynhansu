@@ -108,7 +108,7 @@ const ReportManager: React.FC = () => {
                 type="date" required 
                 value={formData.date}
                 onChange={e => setFormData({...formData, date: e.target.value})}
-                className="mt-1 block w-full border border-gray-300 rounded-md px-3 h-10" 
+                className="mt-1 block w-full border border-gray-300 rounded-md px-3 h-10 bg-white shadow-sm" 
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -118,7 +118,7 @@ const ReportManager: React.FC = () => {
                   type="number" required min="0"
                   value={formData.totalIssued}
                   onChange={e => setFormData({...formData, totalIssued: Number(e.target.value)})}
-                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 h-10" 
+                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 h-10 bg-white shadow-sm" 
                 />
               </div>
               <div>
@@ -127,7 +127,7 @@ const ReportManager: React.FC = () => {
                   type="number" required min="0"
                   value={formData.notReceived}
                   onChange={e => setFormData({...formData, notReceived: Number(e.target.value)})}
-                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 h-10" 
+                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 h-10 bg-white shadow-sm" 
                 />
               </div>
             </div>
@@ -136,7 +136,7 @@ const ReportManager: React.FC = () => {
               <textarea 
                 value={formData.reason}
                 onChange={e => setFormData({...formData, reason: e.target.value})}
-                className="mt-1 block w-full border border-gray-300 rounded-md p-2"
+                className="mt-1 block w-full border border-gray-300 rounded-md p-2 bg-white shadow-sm"
                 rows={3}
               ></textarea>
             </div>

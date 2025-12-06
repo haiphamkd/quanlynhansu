@@ -4,9 +4,8 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   AreaChart, Area
 } from 'recharts';
-import { Sparkles, Users, TrendingUp, AlertCircle, DollarSign, Pill } from 'lucide-react';
+import { Users, TrendingUp, AlertCircle, DollarSign, Pill } from 'lucide-react';
 import { dataService } from '../services/dataService';
-import { analyzeDepartmentData } from '../services/geminiService';
 import { formatDateVN, formatCurrencyVN } from '../utils/helpers';
 
 const Dashboard: React.FC = () => {
@@ -19,7 +18,6 @@ const Dashboard: React.FC = () => {
   });
   const [fundData, setFundData] = useState<any[]>([]);
   const [reportData, setReportData] = useState<any[]>([]);
-  const [aiInsight, setAiInsight] = useState<string>('');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -58,9 +56,6 @@ const Dashboard: React.FC = () => {
           issued: r.totalIssued,
           missed: r.notReceived
         })));
-
-        const insight = await analyzeDepartmentData(funds, reports);
-        setAiInsight(insight);
 
       } catch (error) {
         console.error("Error loading dashboard data", error);
@@ -136,24 +131,6 @@ const Dashboard: React.FC = () => {
             <p className="text-sm text-gray-500 font-medium">Chưa nhận thuốc</p>
             <h3 className="text-2xl font-bold text-gray-900 mt-1">{stats.pendingIssues}</h3>
           </div>
-        </div>
-      </div>
-
-      {/* AI Insight Section */}
-      <div className="bg-gradient-to-br from-teal-600 to-cyan-700 rounded-xl p-6 shadow-lg text-white relative overflow-hidden">
-        <div className="absolute top-0 right-0 p-4 opacity-10">
-          <Sparkles size={150} />
-        </div>
-        <div className="relative z-10">
-          <div className="flex items-center space-x-2 mb-3">
-            <div className="bg-white/20 p-1.5 rounded-md backdrop-blur-sm">
-              <Sparkles className="text-white" size={16} />
-            </div>
-            <h3 className="font-bold text-lg tracking-wide">Trợ lý AI Phân tích</h3>
-          </div>
-          <p className="text-teal-50 leading-relaxed text-sm md:text-base border-l-2 border-teal-400 pl-4 bg-teal-800/20 py-2 pr-2 rounded-r-lg">
-            {aiInsight || "Đang phân tích dữ liệu..."}
-          </p>
         </div>
       </div>
 

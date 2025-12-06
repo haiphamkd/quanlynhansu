@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   Users, Calendar, Wallet, FileBarChart, 
-  Menu, LogOut, Pill, FileText, Star, Clock, AlertTriangle 
+  Menu, LogOut, Pill, FileText, Star, Clock, AlertTriangle, Sparkles 
 } from 'lucide-react';
 import { MenuItem, User } from '../types';
 import { dataService } from '../services/dataService';
@@ -23,6 +23,7 @@ const MENU_ITEMS: MenuItem[] = [
   { id: 'reports', label: 'Báo cáo đơn', icon: Pill, path: '/reports' },
   { id: 'evaluation', label: 'Đánh giá năm', icon: Star, path: '/evaluation' },
   { id: 'proposals', label: 'Tờ trình', icon: FileText, path: '/proposals' },
+  { id: 'ai', label: 'Trợ lý AI', icon: Sparkles, path: '/ai-assistant' },
 ];
 
 const Layout: React.FC<LayoutProps> = ({ children, user, onLogout }) => {
